@@ -1,0 +1,33 @@
+﻿.book-card {
+    transition: transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out;
+}
+
+    .book-card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+
+.book-image {
+    height: 220px;
+    object-fit: cover;
+    transition: transform 0.4s ease-in-out;
+    cursor: pointer;
+}
+
+.book-card:hover .book-image {
+    transform: scale(1.1);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+#fullImage {
+    max-width: 60%;
+    max-height: 60vh;
+    display: block;
+    margin: 0 auto;
+    border-radius: 10px;
+}
+

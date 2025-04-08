@@ -1,0 +1,97 @@
+﻿.navbar {
+    height: 60px;
+    padding: 5px 15px;
+}
+
+.navbar-brand {
+    font-size: 18px;
+}
+
+.navbar-nav .nav-link {
+    padding: 5px 10px;
+}
+
+.navbar-nav .nav-link {
+    transition: color 0.3s ease-in-out;
+}
+
+    /* Hover effect */
+    .navbar-nav .nav-link:hover {
+        color: #f39c12 !important;
+    }
+
+/* Active Page Link */
+.navbar-nav .nav-item .nav-link.active {
+    color: #f39c12 !important;
+    font-weight: bold;
+}
+
+.icon
+{
+    width: 70px;
+}
+
+
+#cartCount {
+    font-size: 10px;
+    min-width: 18px;
+    padding: 3px 6px;
+}
+
+.custom-green-btn {
+    background-color: #28a745 !important; /* Bootstrap Success Green */
+    border-color: #28a745 !important;
+    color: white !important;
+}
+    .custom-green-btn:hover {
+        background-color: #218838 !important; /* Darker Green */
+        border-color: #1e7e34 !important;
+    }
+    /*.container {
+    margin-top: 20px;
+    min-height: calc(100vh - 150px);
+}
+
+ Footer styling 
+.footer {
+    background-color: #1b32db;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+    position: relative;
+    width: 100%;
+}
+
+.footer-bottom {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid white;
+}
+
+ Footer links styling 
+.footer a {
+    color: white;
+    text-decoration: none;
+}
+
+    .footer a:hover {
+        text-decoration: underline;
+    }*/
+
+.container-fluid {
+    padding: 0 !important;
+    margin-top: -8px;
+}
+
+.custom-img-container {
+    height: auto;
+    overflow: hidden;
+}
+
+.custom-img {
+    height: 100% !important;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
+

@@ -1,0 +1,6 @@
+@BookShoppingCat_WebAPI_HostAddress = http://localhost:5006
+
+GET {{BookShoppingCat_WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

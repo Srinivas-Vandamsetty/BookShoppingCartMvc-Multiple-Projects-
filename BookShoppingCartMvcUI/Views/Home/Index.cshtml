@@ -1,0 +1,122 @@
+﻿@using BookShoppingCart.Models.Models.DTOs
+@model BookDisplayModel
+@{
+    int pageSize = 12;
+    int pageNumber = Context.Request.Query["page"].ToString() == "" ? 1 : int.Parse(Context.Request.Query["page"]);
+    int totalBooks = Model.Books.Count();
+    int totalPages = (int)Math.Ceiling((double)totalBooks / pageSize);
+    var pagedBooks = Model.Books.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+}
+
+<div class="container mt-4">
+    <!-- Search & Filter Form -->
+    <div class="d-flex justify-content-center">
+        <div class="my-2">
+            <form asp-action="Index" method="get" class="row g-3 align-items-center justify-content-center">
+                <div class="col-auto">
+                    <select class="form-select" id="genreId" name="genreId">
+                        <option selected>Genre</option>
+                        @foreach (var genre in Model.Genres)
+                        {
+                            <option selected="@(genre.Id == Model.GenreId)" value="@genre.Id">@genre.GenreName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" value="@Model.STerm" id="sterm" name="sterm" placeholder="Search by title">
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    <a href="/Home/Index" class="btn btn-dark">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Book Grid -->
+    <div class="row mt-4">
+        @foreach (var book in pagedBooks)
+        {
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div class="card book-card shadow-sm border-0">
+                    <div class="position-relative">
+                        <img src="/images/@(string.IsNullOrEmpty(book.Image) ? "NoImage.png" : book.Image)" class="card-img-top book-image" alt="Book Image" onclick="showFullImage('/images/@book.Image')">
+                        @if (book.Quantity == 0)
+                        {
+                            <span class="badge bg-danger position-absolute top-0 end-0 m-2">Out of Stock</span>
+                        }
+                    </div>
+                    <div class="card-body text-center">
+                        <h6 class="fw-bold">@book.BookName</h6>
+                        <p class="mb-1"><strong>Genre:</strong> @book.GenreName</p>
+                        <p class="mb-1"><strong>Author:</strong> @book.AuthorName</p>
+                        <p class="fw-bold text-primary">₹@book.Price</p>
+
+                        @if (book.Quantity > 0)
+                        {
+                            <button type="button" onclick="addToCart(@book.Id, this)" class="btn custom-green-btn w-100">
+                                <i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-secondary w-100" disabled>Out of Stock</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <nav aria-label="Book Pagination">
+            <ul class="pagination justify-content-center mt-4">
+                <li class="page-item @(pageNumber == 1 ? "disabled" : "")">
+                    <a class="page-link" href="?page=@(pageNumber - 1)" tabindex="-1">Previous</a>
+                </li>
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == pageNumber ? "active" : "")">
+                        <a class="page-link" href="?page=@i">@i</a>
+                    </li>
+                }
+                <li class="page-item @(pageNumber == totalPages ? "disabled" : "")">
+                    <a class="page-link" href="?page=@(pageNumber + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="fullImage" class="img-fluid" src="" alt="Full Book Image">
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/bookCart.js"></script>
+    <script>
+        function showFullImage(imageUrl) {
+            document.getElementById('fullImage').src = imageUrl;
+            var modal = new bootstrap.Modal(document.getElementById('imageModal'));
+            modal.show();
+        }
+    </script>
+}
+
+<link rel="stylesheet" href="~/css/bookCart.css">
