@@ -1,6 +1,6 @@
-﻿<footer class="custom-footer">
+﻿<footer class="custom-footer py-5">
     <div class="container">
-        <div class="row">
+        <div class="row gy-4">
             <div class="col-md-3">
                 <h5>About Us</h5>
                 <p>We provide an extensive collection of books to meet your reading needs.</p>
@@ -14,30 +14,29 @@
             <div class="col-md-3">
                 <h5>Pages</h5>
                 <ul class="list-unstyled">
-                    <li><a href="#">Home</a></li>
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">Shop</a></li>
-                    <li><a href="#">News</a></li>
-                    <li><a href="#">Contact</a></li>
+                    <li><a class="nav-link p-0" asp-controller="Home" asp-action="Index">Books</a></li>
+                    <li><a class="nav-link p-0 " asp-controller="FrontPage" asp-action="AboutUs">About</a></li>
+                    <li><a class="nav-link p-0" asp-controller="FrontPage" asp-action="Shop">Shop</a></li>
+                    <li><a class="nav-link p-0" asp-controller="FrontPage" asp-action="Contact">Contact</a></li>
                 </ul>
             </div>
             <div class="col-md-3">
                 <h5>Subscribe</h5>
                 <p>Subscribe to our mailing list to get the latest updates.</p>
-                <div class="subscribe-form">
-                    <input type="email" placeholder="Email" class="form-control">
-                    <button class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+                <div class="subscribe-form d-flex">
+                    <input type="email" placeholder="Email" class="form-control me-2">
+                    <button class="btn"><i class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
         </div>
 
-        <div class="footer-bottom text-center mt-4">
-            <p>© 2025 All Rights Reserved | Designed by <a href="#">Bookverse</a></p>
-            <div class="social-icons">
-                <a href="#"><i class="fab fa-facebook-f"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-linkedin"></i></a>
+        <div class="footer-bottom text-center mt-4 pt-3">
+            <p>© 2025 All Rights Reserved | Designed by <a href="/Home">Bookverse</a></p>
+            <div class="social-icons mt-2">
+                <a href="https://www.facebook.com/"><i class="fab fa-facebook-f me-2"></i></a>
+                <a href="https://x.com/i/flow/login"><i class="fab fa-twitter me-2"></i></a>
+                <a href="https://www.instagram.com/accounts/login/"><i class="fab fa-instagram me-2"></i></a>
+                <a href="https://www.linkedin.com/"><i class="fab fa-linkedin"></i></a>
             </div>
         </div>
     </div>

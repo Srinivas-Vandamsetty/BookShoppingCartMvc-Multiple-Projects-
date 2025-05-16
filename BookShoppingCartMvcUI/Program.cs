@@ -29,15 +29,17 @@ builder.Services.AddScoped<IBookRepository, BookRepository>();
 builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<StockRepository>();
+builder.Services.AddScoped<IUserOrderRepository, UserOrderRepository>();
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 
 // Register services
 builder.Services.AddScoped<IBookService, BookService>();
 //builder.Services.AddScoped<IHomeService, HomeService>();
-builder.Services.AddTransient<IFileService, FileService>();
+builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<IUserOrderService, UserOrderService>();
 
 var app = builder.Build();
 

@@ -9,17 +9,28 @@
     }
 }
 
-<h1>Manage your account</h1>
+<div class="container-fluid py-5" style="background: #f8f9fa; min-height: 100vh;">
+    <div class="mb-5 text-center">
+        <h1 class="fw-bold" style="font-size: 3rem; color: #2c3e50; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">
+            Manage Your Account
+        </h1>
+        <p class="lead text-muted">Update your details, manage security, and customize preferences</p>
+    </div>
 
-<div>
-    <h2>Change your account settings</h2>
-    <hr />
-    <div class="row">
-        <div class="col-md-3">
-            <partial name="_ManageNav" />
+    <div class="row justify-content-center">
+        <!-- Sidebar -->
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="bg-white p-4 rounded-4 shadow-lg border">
+                <h5 class="fw-bold mb-3 text-bs-gray-dark">Account Settings</h5>
+                <partial name="_ManageNav" />
+            </div>
         </div>
-        <div class="col-md-9">
-            @RenderBody()
+
+        <!-- Main Content -->
+        <div class="col-md-8 col-lg-7">
+            <div class="bg-white p-5 rounded-4 shadow-lg border">
+                @RenderBody()
+            </div>
         </div>
     </div>
 </div>

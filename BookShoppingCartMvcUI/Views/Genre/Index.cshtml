@@ -1,28 +1,56 @@
 ﻿@using BookShoppingCart.Models.Models
 @model IEnumerable<Genre>
+
 @{
     Layout = "_AdminLayout";
 }
 
-<h2>Genres</h2>
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text--bs-gray-dark">🎭 Genres</h2>
+        <a asp-action="AddGenre" asp-controller="Genre" class="btn btn-warning">
+            <i class="bi bi-plus-circle me-1"></i> Add New Genre
+        </a>
+    </div>
 
-<a asp-action="AddGenre" asp-controller="Genre" class="btn btn-primary">Add More</a>
-
-<table class="table table-striped my-2">
-    <tr>
-        <th>Genre</th>
-        <th>Action</th>
-    </tr>
-
-    @foreach(var genre in Model)
+    @if (Model?.Any() == true)
     {
-        <tr>
-            <td>@genre.GenreName</td>
-            <td>
-                <a asp-action="UpdateGenre" asp-controller="Genre" asp-route-id="@genre.Id" class="btn btn-success">Edit</a>
-                <a asp-action="DeleteGenre" asp-controller="Genre" asp-route-id="@genre.Id" class="btn btn-danger" onclick="return window.confirm('Are you sure?')">Delete</a>
-            </td>
-        </tr>
+        <div class="table-responsive">
+            <table class="table align-middle table-bordered table-hover shadow-sm rounded-3 bg-white">
+                <thead class="table-light">
+                    <tr>
+                        <th>Genre</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var genre in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@genre.GenreName</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a asp-action="UpdateGenre" asp-controller="Genre" asp-route-id="@genre.Id"
+                                       class="btn btn-success btn-sm">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </a>
+                                    <a asp-action="DeleteGenre" asp-controller="Genre" asp-route-id="@genre.Id"
+                                       class="btn btn-danger btn-sm"
+                                       onclick="return confirm('Are you sure you want to delete this genre?')">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
-</table>
-
+    else
+    {
+        <div class="alert alert-warning mt-3">
+            No genres found. Click <strong>Add New Genre</strong> to get started.
+        </div>
+    }
+</div>

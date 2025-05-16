@@ -4,49 +4,78 @@
     ViewData["Title"] = "Checkout";
 }
 
-<h2>Checkout</h2>
-<form asp-action="Checkout">
-    <div class="py-2">
-        <label asp-for="Name">Name*</label>
-        <input type="text" class="form-control" asp-for="Name" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
+                    <h2 class="mb-0">Checkout</h2>
+                </div>
+                <div class="card-body p-5">
+
+                    <form asp-action="Checkout">
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold">Name*</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                                <input type="text" class="form-control form-control-lg" asp-for="Name" placeholder="Enter your name" />
+                            </div>
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-semibold">Email*</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                                <input type="email" class="form-control form-control-lg" asp-for="Email" placeholder="Enter your email" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="MobileNumber" class="form-label fw-semibold">Mobile Number*</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-telephone-fill"></i></span>
+                                <input type="text" class="form-control form-control-lg" asp-for="MobileNumber" placeholder="Enter your mobile number" />
+                            </div>
+                            <span asp-validation-for="MobileNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Address" class="form-label fw-semibold">Address*</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-house-door-fill"></i></span>
+                                <textarea class="form-control form-control-lg" asp-for="Address" rows="4" placeholder="Enter your address"></textarea>
+                            </div>
+                            <span asp-validation-for="Address" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="PaymentMethod" class="form-label fw-semibold">Payment Method*</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-credit-card-fill"></i></span>
+                                <select asp-for="PaymentMethod" class="form-select form-select-lg">
+                                    <option value="">Select Payment Method</option>
+                                    @foreach (var method in Enum.GetValues(typeof(BookShoppingCartMvcUI.Constants.PaymentMethods)))
+                                    {
+                                        <option value="@method.ToString()">@method.ToString()</option>
+                                    }
+                                </select>
+                            </div>
+                            <span asp-validation-for="PaymentMethod" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle-fill"></i> Proceed to Confirm
+                            </button>
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="py-2">
-        <label asp-for="Email">Email*</label>
-        <input type="text" class="form-control" asp-for="Email" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-
-    </div>
-
-    <div class="py-2">
-        <label asp-for="MobileNumber">MobileNumber*</label>
-        <input type="text" class="form-control" asp-for="MobileNumber" />
-        <span asp-validation-for="MobileNumber" class="text-danger"></span>
-    </div>
-
-
-    <div class="py-2">
-        <label asp-for="Address">Address*</label>
-        <textarea class="form-control" asp-for="Address" rows="5"> </textarea>
-        <span asp-validation-for="Address" class="text-danger"></span>
-    </div>
-
-    <div class="py-2">
-        <span class="mr-2">COD*</span>
-        <select asp-for="PaymentMethod" class="form-control">
-            <option value="">Select Payment Method</option>
-            @foreach (var method in Enum.GetValues(typeof(BookShoppingCartMvcUI.Constants.PaymentMethods)))
-            {
-                <option value="@method.ToString()">@method.ToString()</option>
-
-            }
-        </select>
-        <span asp-validation-for="PaymentMethod" class="text-danger"></span>
-    </div>
-
-    <div class="py-2">
-        <button type="submit" c class="btn btn-info">Next</button>
-
-    </div>
-</form>
+</div>

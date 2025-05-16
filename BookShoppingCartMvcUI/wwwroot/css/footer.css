@@ -1,8 +1,6 @@
 ﻿.custom-footer {
     background-color: #051922;
     color: #ffffff;
-    padding: 40px 0;
-    font-size: 14px;
 }
 
     .custom-footer h5 {
@@ -22,44 +20,21 @@
             color: #f39c12;
         }
 
-    .custom-footer ul {
-        padding: 0;
-        list-style: none;
-    }
-
-.subscribe-form {
-    display: flex;
+.subscribe-form button {
+    background-color: #f39c12;
+    color: white;
 }
 
-    .subscribe-form input {
-        flex: 1;
-        padding: 5px;
-        border: none;
-        border-radius: 3px;
+    .subscribe-form button:hover {
+        background-color: #d68910;
     }
-
-    .subscribe-form button {
-        background-color: #f39c12;
-        border: none;
-        padding: 6px 12px;
-        color: white;
-        cursor: pointer;
-        border-radius: 3px;
-    }
-
-        .subscribe-form button:hover {
-            background-color: #d68910;
-        }
 
 .footer-bottom {
     border-top: 1px solid #444;
-    padding-top: 15px;
 }
 
     .footer-bottom .social-icons a {
         color: white;
-        font-size: 18px;
-        margin: 0 10px;
     }
 
         .footer-bottom .social-icons a:hover {

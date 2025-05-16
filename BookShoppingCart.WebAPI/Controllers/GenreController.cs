@@ -1,7 +1,7 @@
 ﻿using BookShoppingCart.Business.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using BookShoppingCart.Models.Models.DTOs;
+using BookShoppingCart.Models.Models;
 
 namespace BookShoppingCart.WebAPI.Controllers
 {
@@ -34,21 +34,21 @@ namespace BookShoppingCart.WebAPI.Controllers
 
         // POST: api/Genre/AddGenre
         [HttpPost("AddGenre")]
-        public async Task<IActionResult> AddGenre([FromBody] GenreDTO genreDto)
+        public async Task<IActionResult> AddGenre([FromBody] Genre genre)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            await _genreService.AddGenre(genreDto);
-            return CreatedAtAction(nameof(GetGenreById), new { id = genreDto.Id }, genreDto);
+            await _genreService.AddGenre(genre);
+            return CreatedAtAction(nameof(GetGenreById), new { id = genre.Id }, genre);
         }
 
         // PUT: api/Genre/UpdateGenre
         [HttpPut("UpdateGenre")]
-        public async Task<IActionResult> UpdateGenre([FromBody] GenreDTO genreDto)
+        public async Task<IActionResult> UpdateGenre([FromBody] Genre genre)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            await _genreService.UpdateGenre(genreDto);
+            await _genreService.UpdateGenre(genre);
             return NoContent();
         }
 

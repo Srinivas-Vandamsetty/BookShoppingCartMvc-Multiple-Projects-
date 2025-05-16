@@ -1,36 +1,45 @@
 ﻿@using BookShoppingCart.Models.Models.DTOs
 @model OrderDetailModalDTO
 
-<div class="modal fade" id="modal-@Model.DivId" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Order Detail</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="modal-@Model.DivId" tabindex="-1" aria-labelledby="modalLabel-@Model.DivId" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold" id="modalLabel-@Model.DivId">📚 Order Detail</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <table class="table table-striped">
-                    <tr>
-                        <th>Book</th>
-                        <th>Genre</th>
-                        <th>Price</th>
-                        <th>Quantiy</th>
-                        <th>TotalPrice</th>
-                    </tr>
-                    @foreach (var item in Model.OrderDetail)
-                    {
-                        <tr>
-                            <td>@item.Book.BookName</td>
-                            <td>@item.Book.Genre.GenreName</td>
-                            <td>@item.UnitPrice</td>
-                            <td>@item.Quantity</td>
-                            <td>@(item.Quantity * item.UnitPrice)</td>
-                        </tr>
-                    }
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="bi bi-book me-1"></i>Book</th>
+                                <th><i class="bi bi-tags me-1"></i>Genre</th>
+                                <th><i class="bi bi-currency-rupee me-1"></i>Price</th>
+                                <th><i class="bi bi-hash me-1"></i>Quantity</th>
+                                <th><i class="bi bi-receipt me-1"></i>Total Price</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var item in Model.OrderDetail)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@item.Book.BookName</td>
+                                    <td>@item.Book.Genre.GenreName</td>
+                                    <td>₹@item.UnitPrice.ToString("0.00")</td>
+                                    <td>@item.Quantity</td>
+                                    <td class="text-success fw-bold">₹@(item.Quantity * item.UnitPrice)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <div class="modal-footer bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-outline-primary px-4" data-bs-dismiss="modal">
+                    Close
+                </button>
             </div>
         </div>
     </div>

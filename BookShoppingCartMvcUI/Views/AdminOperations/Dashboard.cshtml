@@ -1,6 +1,17 @@
 ﻿@{
     Layout = "_AdminLayout";
+    ViewData["Title"] = "Dashboard";
 }
 
-<h2>Welcome to dashboard</h2>
+<!-- Banner Section with Bootstrap 5 utilities only -->
+<div class="position-relative text-center text-white bg-dark" style="height: 600px; background-image: url('/images/DashboardBanner.jpg'); background-size: cover; background-position: center;">
 
+    <!-- Dark overlay -->
+    <div class="position-absolute top-0 start-0 w-100 h-100" style="background-color: rgba(0, 0, 0, 0.5);"></div>
+
+    <!-- Centered text content -->
+    <div class="position-absolute top-50 start-50 translate-middle">
+        <p class="text-uppercase fw-bold text-warning letter-spacing-2">Manage your books, genres, and stock</p>
+        <h1 class="fw-bold">Dashboard</h1>
+    </div>
+</div>

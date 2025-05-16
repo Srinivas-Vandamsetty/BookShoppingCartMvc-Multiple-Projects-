@@ -4,49 +4,66 @@
     Layout = "_AdminLayout";
 }
 
-<h2>Books</h2>
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text--bs-gray-dark">📚 Books</h2>
+        <a asp-action="AddBook" asp-controller="Book" class="btn btn-warning">
+            <i class="bi bi-plus-circle me-1"></i> Add New Book
+        </a>
+    </div>
 
-<a asp-action="AddBook" asp-controller="Book" class="btn btn-primary">Add More</a>
-
-@if(Model?.Count()>0)
-{
-    <table class="table table-striped my-2">
-        <tr>
-            <th>Image</th>
-            <th>Book</th>
-            <th>Author</th>
-            <th>Genre</th>
-            <th>Price</th>
-            <th>Action</th>
-        </tr>
-
-        @foreach (var book in Model)
-        {
-            <tr>
-                <td>
-                    @if(string.IsNullOrWhiteSpace(book.Image))
+    @if (Model?.Any() == true)
+    {
+        <div class="table-responsive">
+            <table class="table align-middle table-bordered table-hover shadow-sm rounded-3 bg-white">
+                <thead class="table-light">
+                    <tr>
+                        <th>Image</th>
+                        <th>Book</th>
+                        <th>Author</th>
+                        <th>Genre</th>
+                        <th>Price</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var book in Model)
                     {
-                        <img src="/Images/NoImage.png" style="width:80px;height:100px" alt="book image" />
+                        <tr>
+                            <td>
+                                <img src="/images/@(string.IsNullOrWhiteSpace(book.Image) ? "NoImage.png" : book.Image)"
+                                     class="img-thumbnail rounded shadow-sm"
+                                     style="width: 70px; height: 100px;" alt="Book Cover" />
+                            </td>
+                            <td class="fw-semibold">@book.BookName</td>
+                            <td>@book.AuthorName</td>
+                            <td>
+                                <span class="badge bg-info text-dark">@book.Genre.GenreName</span>
+                            </td>
+                            <td class="fw-bold text-success">₹@book.Price.ToString("N2")</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a asp-action="UpdateBook" asp-controller="Book" asp-route-id="@book.Id"
+                                       class="btn btn-success btn-sm">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </a>
+                                    <a asp-action="DeleteBook" asp-controller="Book" asp-route-id="@book.Id"
+                                       class="btn btn-danger btn-sm"
+                                       onclick="return confirm('Are you sure you want to delete this book?')">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
                     }
-                    else
-                    {
-                        <img src="/images/@book.Image" style="width:80px;height:100px" alt="book image" />
-                    }
-                </td>
-                <td>@book.BookName</td>
-                <td>@book.AuthorName</td>
-                <td>@book.Genre.GenreName</td>
-                <td>@book.Price</td>
-                <td>
-                    <a asp-action="UpdateBook" asp-controller="Book" asp-route-id="@book.Id" class="btn btn-success">Edit</a>
-                    <a asp-action="DeleteBook" asp-controller="Book" asp-route-id="@book.Id" class="btn btn-danger" onclick="return window.confirm('Are you sure?')">Delete</a>
-                </td>
-            </tr>
-        }
-    </table>
-}
-else
-{
-    <h3>No records</h3>
-}
-
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning mt-3">
+            No records found. Click <strong>Add New Book</strong> to get started.
+        </div>
+    }
+</div>

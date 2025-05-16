@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace BookShoppingCart.Data.Repositories
 {
-    // Repository for retrieving books and genres for the home page
     public class HomeRepository : IHomeRepository
     {
         private readonly ApplicationDbContext _db;
@@ -23,37 +22,44 @@ namespace BookShoppingCart.Data.Repositories
             return await _db.Genres.ToListAsync();
         }
 
-        // Retrieves books based on search term and genre filter
+        // Retrieves books optionally filtered by search term and genreId
         public async Task<IEnumerable<Book>> GetBooks(string sTerm = "", int genreId = 0)
         {
-            sTerm = sTerm.ToLower();
-            IEnumerable<Book> books = await (from book in _db.Books
-                                             join genre in _db.Genres
-                                             on book.GenreId equals genre.Id
-                                             join stock in _db.Stocks
-                                             on book.Id equals stock.BookId
-                                             into book_stocks
-                                             from bookWithStock in book_stocks.DefaultIfEmpty()
-                                             where string.IsNullOrWhiteSpace(sTerm) || book != null && book.BookName.ToLower().StartsWith(sTerm)
-                                             select new Book
-                                             {
-                                                 Id = book.Id,
-                                                 Image = book.Image,
-                                                 AuthorName = book.AuthorName,
-                                                 BookName = book.BookName,
-                                                 GenreId = book.GenreId,
-                                                 Price = book.Price,
-                                                 GenreName = genre.GenreName,
-                                                 Quantity = bookWithStock == null ? 0 : bookWithStock.Quantity
-                                             }
-                         ).ToListAsync();
+            var booksQuery = from book in _db.Books
+                             join genre in _db.Genres on book.GenreId equals genre.Id
+                             join stock in _db.Stocks on book.Id equals stock.BookId into bookStocks
+                             from bookWithStock in bookStocks.DefaultIfEmpty()
+                             select new Book
+                             {
+                                 Id = book.Id,
+                                 Image = book.Image,
+                                 AuthorName = book.AuthorName,
+                                 BookName = book.BookName,
+                                 GenreId = book.GenreId,
+                                 Price = book.Price,
+                                 GenreName = genre.GenreName,
+                                 Quantity = bookWithStock == null ? 0 : bookWithStock.Quantity
+                             };
 
-            // Filters books by genre if specified
+            // Apply genre filtering if a genre ID is provided greater than 0
             if (genreId > 0)
             {
-                books = books.Where(a => a.GenreId == genreId).ToList();
+                booksQuery = booksQuery.Where(book => book.GenreId == genreId);
             }
-            return books;
+
+
+            if (!string.IsNullOrWhiteSpace(sTerm))
+            {
+                sTerm = sTerm.ToLower().Trim();
+
+                booksQuery = booksQuery.Where(book =>
+                    (book.BookName != null && book.BookName.ToLower().Contains(sTerm)) ||
+                    (book.AuthorName != null && book.AuthorName.ToLower().Contains(sTerm)) ||
+                    (book.GenreName != null && book.GenreName.ToLower().Contains(sTerm))
+                );
+            }
+
+            return await booksQuery.ToListAsync();
         }
     }
 }

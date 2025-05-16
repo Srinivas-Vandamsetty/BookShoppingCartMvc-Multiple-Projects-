@@ -2,69 +2,113 @@
 @model ShoppingCart
 @{
     ViewData["Title"] = "GetUserCart";
+    var itemTotal = Model.CartDetails.Select(i => i.Book.Price * i.Quantity).Sum();
+    var shippingCharge = itemTotal >= 999 ? 0 : 50;
 }
 
-<div style="width:90%;margin:auto" class="mt-2">
+<div class="container my-5">
     @if (Model != null && Model.CartDetails != null && Model.CartDetails.Count > 0)
     {
-        <h5>My Cart</h5>
+        <div class="row">
+            <!-- Shopping Cart Left Section -->
+            <div class="col-lg-8">
+                <h4 class="mb-4">Shopping Cart <span class="badge bg-warning text-black">@Model.CartDetails.Count Items</span></h4>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead class="border-bottom">
+                            <tr>
+                                <th scope="col">Product Details</th>
+                                <th scope="col" class="text-center">Quantity</th>
+                                <th scope="col" class="text-end">Price</th>
+                                <th scope="col" class="text-end">Total</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.CartDetails)
+                            {
+                                <tr>
+                                    <td class="d-flex align-items-center">
+                                        <img src="@(string.IsNullOrEmpty(item.Book.Image) ? "/images/NoImage.png" : $"/images/{item.Book.Image}")" class="img-thumbnail me-3" style="width: 80px; height: 100px; object-fit: cover;" />
+                                        <div>
+                                            <h6 class="mb-1">@item.Book.BookName</h6>
+                                            <small class="badge bg-info text-black">@item.Book.Genre.GenreName</small><br />
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center align-items-center">
+                                            <a class="btn btn-outline-secondary btn-sm" href="/cart/removeitem?bookid=@item.BookId">−</a>
+                                            <span class="px-2">@item.Quantity</span>
+                                            @if (item.Quantity < item.Book.Stock.Quantity)
+                                            {
+                                                <a class="btn btn-outline-secondary btn-sm" href="/Cart/AddItem?bookId=@item.BookId&&redirect=1">+</a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-danger small ms-2"><strong>Out of stock</strong></span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="text-end">₹@item.Book.Price.ToString("0.00")</td>
+                                    <td class="text-end">
+                                        ₹@((item.Book.Price * item.Quantity).ToString("0.00"))
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <a href="/" class="badge bg-warning text-black">&larr; Continue Shopping</a>
+            </div>
 
-        <table class="table table-striped">
-            <tr>
-                <th>Book</th>
-                <th>Image</th>
-                <th>Genre</th>
-                <th>Unit Price(INR)</th>
-                <th>Total Price</th>
-                <th>Action</th>
-            </tr>
-            @foreach (var item in Model.CartDetails)
-            {
-                <tr>
-                    <td>@item.Book.BookName</td>
-                    <td>
-                        @if (string.IsNullOrEmpty(item.Book.Image))
+            <!-- Order Summary Right Section -->
+            <div class="col-lg-4">
+                <div class="card p-4 shadow-sm">
+                    <h5 class="mb-3">Order Summary</h5>
+                    <div class="d-flex justify-content-between">
+                        <span>Items</span>
+                        <span>₹@itemTotal.ToString("0.00")</span>
+                    </div>
+                    <hr />
+                    <div class="mb-3">
+                        <label class="form-label">Shipping</label>
+                        @if (itemTotal >= 999)
                         {
-                            <img src="/images/NoImage.png" style="width:80px;height:100px" />
+                            <select id="shippingMethod" class="form-select" disabled>
+                                <option value="0" selected>Free shipping on orders over ₹999</option>
+                            </select>
                         }
                         else
                         {
-                            <img src="/images/@item.Book.Image" style="width:80px;height:100px" />
+                            <select id="shippingMethod" class="form-select">
+                                <option value="50" selected>Standard Delivery - ₹50.00</option>
+                                <option value="100">Express Delivery - ₹100.00</option>
+                            </select>
                         }
-                    </td>
-                    <td>@item.Book.Genre.GenreName</td>
-                    <td>@item.Book.Price X @item.Quantity</td>
-                    <td>@(item.Book.Price * item.Quantity)</td>
-                    <td>
-                        @* Increase Quantity button should be invisible if not enough stock*@
-                        @if (item.Quantity < item.Book.Stock.Quantity)
-                        {
-                            <a class="btn btn-info" href="/Cart/AddItem?bookId=@item.BookId&&redirect=1">+</a>
-                        }
-                        else
-                        {
-                            <span style="border: 1px solid;padding: 8px 8px;color: red;border-radius: 5px;margin-right:4px">Out of stock </span>
-                        }
-                        @* Decrement button *@
-                        <a class="btn btn-info" href="/cart/removeitem?bookid=@item.BookId">-</a>
-                    </td>
-                </tr>
-            }
-        </table>
+                    </div>
 
-        <div class="my-2">
-            <h5>Total(INR): </h5>
-            @(Model.CartDetails.Select(item => item.Book.Price * item.Quantity).Sum())
+                    <input type="hidden" id="baseTotalValue" value="@itemTotal" />
+
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Total Cost</strong>
+                        <strong id="totalCostDisplay">₹@((itemTotal + shippingCharge).ToString("0.00"))</strong>
+                    </div>
+                    <a href="/Cart/Checkout" class="btn btn-primary w-100">Checkout</a>
+                </div>
+            </div>
         </div>
-
-        <div class="my-2">
-            <a class="btn btn-primary" href="/Cart/Checkout">Checkout</a>
-        </div>
-
     }
     else
     {
-        <h5>Cart is empty</h5>
+        <div class="text-center">
+            <img src="/images/EmptyCartImage.png" alt="Empty Cart" class="img-fluid" style="max-width: 250px;" />
+            <h2 class="mt-4 text-danger">Your cart is empty</h2>
+            <p class="lead mt-2"><strong>Looks like you haven’t added anything to your cart yet.</strong></p>
+            <a href="/" class="btn btn-primary mt-3">Start Shopping</a>
+        </div>
     }
 </div>
 
+@section Scripts {
+    <script src="~/js/shippingcart.js"></script>
+}

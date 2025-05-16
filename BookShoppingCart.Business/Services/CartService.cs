@@ -1,5 +1,6 @@
 ﻿using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models.DTOs;
 using System.Threading.Tasks;
 
 namespace BookShoppingCart.Business.Services
@@ -37,6 +38,12 @@ namespace BookShoppingCart.Business.Services
         public async Task<int> GetCartItemCount(string userId = "")
         {
             return await _cartRepo.GetCartItemCount(userId);
+        }
+
+        // Handles the checkout process by placing the order and updating stock
+        public async Task<bool> DoCheckout(CheckoutModel model)
+        {
+            return await _cartRepo.DoCheckout(model);
         }
     }
 }

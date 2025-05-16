@@ -8,28 +8,28 @@
     var pagedBooks = Model.Books.Skip((pageNumber - 1) * pageSize).Take(pageSize);
 }
 
+<div class="bg-white text-black py-2 text-center fw-bold">
+    <marquee behavior="scroll" direction="left" scrollamount="6">
+        🚚 Free Delivery on Orders Above ₹999!🎉
+
+    </marquee>
+</div>
+
 <div class="container mt-4">
-    <!-- Search & Filter Form -->
+    <!-- Search Form -->
     <div class="d-flex justify-content-center">
         <div class="my-2">
             <form asp-action="Index" method="get" class="row g-3 align-items-center justify-content-center">
                 <div class="col-auto">
-                    <select class="form-select" id="genreId" name="genreId">
-                        <option selected>Genre</option>
-                        @foreach (var genre in Model.Genres)
-                        {
-                            <option selected="@(genre.Id == Model.GenreId)" value="@genre.Id">@genre.GenreName</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-auto">
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control" value="@Model.STerm" id="sterm" name="sterm" placeholder="Search by title">
+                        <input type="text" class="form-control input-group-custom " id="sterm" name="sterm"
+                               value="@Context.Request.Query["sterm"]"
+                               placeholder="Search by title, author, or genre">
                     </div>
                 </div>
                 <div class="col-auto">
-                    <button type="submit" class="btn btn-primary">Search</button>
+                    <button type="submit" class="btn btn-warning">Search</button>
                     <a href="/Home/Index" class="btn btn-dark">Reset</a>
                 </div>
             </form>
@@ -43,7 +43,9 @@
             <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                 <div class="card book-card shadow-sm border-0">
                     <div class="position-relative">
-                        <img src="/images/@(string.IsNullOrEmpty(book.Image) ? "NoImage.png" : book.Image)" class="card-img-top book-image" alt="Book Image" onclick="showFullImage('/images/@book.Image')">
+                        <a href="@Url.Action("BookDetails", "Book", new { id = book.Id })">
+                            <img src="/images/@(string.IsNullOrEmpty(book.Image) ? "NoImage.png" : book.Image)" class="card-img-top book-image" alt="Book Image">
+                        </a>
                         @if (book.Quantity == 0)
                         {
                             <span class="badge bg-danger position-absolute top-0 end-0 m-2">Out of Stock</span>
@@ -57,9 +59,8 @@
 
                         @if (book.Quantity > 0)
                         {
-                            <button type="button" onclick="addToCart(@book.Id, this)" class="btn custom-green-btn w-100">
-                                <i class="bi bi-cart-plus"></i> Add to Cart
-                            </button>
+                            <button class="btn btn-warning w-100 addToCartButton" data-book-id="@book.Id">
+                                <i class="bi bi-cart-plus"></i> Add to Cart</button>
                         }
                         else
                         {
@@ -76,47 +77,45 @@
     {
         <nav aria-label="Book Pagination">
             <ul class="pagination justify-content-center mt-4">
+                <!-- Previous button with fade effect when on the first page -->
                 <li class="page-item @(pageNumber == 1 ? "disabled" : "")">
-                    <a class="page-link" href="?page=@(pageNumber - 1)" tabindex="-1">Previous</a>
+                    <a class="page-link bg-warning text-light border-secondary @(pageNumber == 1 ? "opacity-50 cursor-not-allowed" : "")" href="?page=@(pageNumber - 1)" tabindex="-1">Previous</a>
                 </li>
                 @for (int i = 1; i <= totalPages; i++)
                 {
-                    <li class="page-item @(i == pageNumber ? "active" : "")">
-                        <a class="page-link" href="?page=@i">@i</a>
+                    var isActive = i == pageNumber;
+                    <li class="page-item @(isActive ? "active" : "")">
+                        <a class="page-link @(isActive ? "bg-dark text-white fw-bold border-warning" : "bg-warning text-light border-secondary")" href="?page=@i">
+                            @i
+                        </a>
                     </li>
                 }
+                <!-- Next button with fade effect when on the last page -->
                 <li class="page-item @(pageNumber == totalPages ? "disabled" : "")">
-                    <a class="page-link" href="?page=@(pageNumber + 1)">Next</a>
+                    <a class="page-link bg-warning text-light border-secondary @(pageNumber == totalPages ? "opacity-50 cursor-not-allowed" : "")" href="?page=@(pageNumber + 1)">Next</a>
                 </li>
             </ul>
         </nav>
     }
-</div>
 
-<!-- Image Modal -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="imageModalLabel"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="fullImage" class="img-fluid" src="" alt="Full Book Image">
+    <!-- No Results Found -->
+    @if (!pagedBooks.Any())
+    {
+        <div class="col-12 text-center my-5">
+            <div class="p-5 rounded-4 shadow-lg book-not-found">
+                <div class="mb-4">
+                    <i class="bi bi-book-x fs-1 text-warning"></i>
+                </div>
+                <h4 class="fw-bold mb-2">No Books Found</h4>
+                <p class="text-light text-opacity-75 mb-4">We couldn’t find any books matching your search criteria.</p>
+                <a href="/Home/Index" class="btn px-4 py-2 rounded-pill btn-reset-filters">
+                    <i class="bi bi-arrow-clockwise me-2"></i> Reset Filters
+                </a>
             </div>
         </div>
-    </div>
+    }
 </div>
 
 @section Scripts {
     <script src="~/js/bookCart.js"></script>
-    <script>
-        function showFullImage(imageUrl) {
-            document.getElementById('fullImage').src = imageUrl;
-            var modal = new bootstrap.Modal(document.getElementById('imageModal'));
-            modal.show();
-        }
-    </script>
 }
-
-<link rel="stylesheet" href="~/css/bookCart.css">

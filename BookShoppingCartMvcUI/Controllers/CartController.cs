@@ -51,5 +51,42 @@ namespace BookShoppingCartMvcUI.Controllers
             int cartItem = await _cartService.GetCartItemCount();
             return Ok(cartItem);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetCartItemIds()
+        {
+            var cart = await _cartService.GetUserCart();
+            var bookIds = cart?.CartDetails?.Select(cd => cd.BookId).ToList() ?? new List<int>();
+            return Json(bookIds);
+        }
+
+        public IActionResult Checkout()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Checkout(CheckoutModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            // Call the service instead of repository directly
+            bool isCheckedOut = await _cartService.DoCheckout(model);
+            if (!isCheckedOut)
+                return RedirectToAction(nameof(OrderFailure));
+
+            return RedirectToAction(nameof(OrderSuccess));
+        }
+
+        public IActionResult OrderSuccess()
+        {
+            return View();
+        }
+
+        public IActionResult OrderFailure()
+        {
+            return View();
+        }
     }
 }

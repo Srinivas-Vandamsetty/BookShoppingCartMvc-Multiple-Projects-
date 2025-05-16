@@ -18,11 +18,10 @@
     @if (SignInManager.IsSignedIn(User))
     {
         <li class="nav-item text-white me-3">
-            Hello <span id="username">@User.Identity?.Name</span>
-            @if (User.IsInRole("Admin"))
-            {
-                <span>(Admin)</span>
-            }
+            Hello, <span id="username">@User.Identity?.Name</span>
+            <a href="/Identity/Account/Manage" class="text-warning text-decoration-underline fw-bold ms-1">
+                (Your Account)
+            </a>
         </li>
 
         <li class="nav-item">

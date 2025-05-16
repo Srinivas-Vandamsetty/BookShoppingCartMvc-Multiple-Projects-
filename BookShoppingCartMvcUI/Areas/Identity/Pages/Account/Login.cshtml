@@ -1,40 +1,57 @@
 ﻿@page
 @model LoginModel
-
 @{
-    ViewData["Title"] = "Log in";
+    ViewData["Title"] = "Login";
 }
 
-<div class="container d-flex justify-content-center align-items-center min-vh-100">
-    <div class="card p-4 shadow-lg" style="max-width: 400px; width: 100%;">
-        <h2 class="text-center mb-3">Log in</h2>
-        <form id="account" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label asp-for="Input.Email" class="form-label">Email</label>
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
+<!-- Fullscreen background image container -->
+<div class="min-vh-100 d-flex justify-content-center align-items-center" style="background-image: url('/images/BookImage.jpg'); background-size: cover; background-position: center;">
+    <div class="card p-4 shadow-lg border-0 w-100" style="max-width: 400px; background-color: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 20px;">
+        <h3 class="text-white text-center fw-bold mb-4">USER LOGIN</h3>
+
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger text-center mb-3"></div>
+
+            <!-- Email Input -->
+            <div class="input-group mb-4 rounded-pill shadow-sm">
+                <span class="input-group-text bg-white border-0 rounded-start-pill">
+                    <i class="bi bi-person-fill text-primary"></i>
+                </span>
+                <input asp-for="Input.Email" class="form-control border-0 rounded-end-pill" placeholder="Username" />
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                <label asp-for="Input.Password" class="form-label">Password</label>
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
+            <span asp-validation-for="Input.Email" class="text-danger"></span>
+
+            <!-- Password Input -->
+            <div class="input-group mb-4 rounded-pill shadow-sm">
+                <input asp-for="Input.Password" type="password" class="form-control border-0 rounded-start-pill" placeholder="Password" />
+                <span class="input-group-text bg-white border-0 rounded-end-pill">
+                    <i class="bi bi-lock-fill text-primary"></i>
+                </span>
             </div>
-            <div class="form-check mb-3">
-                <input class="form-check-input" asp-for="Input.RememberMe" />
-                <label asp-for="Input.RememberMe" class="form-check-label">Remember me</label>
+            <span asp-validation-for="Input.Password" class="text-danger"></span>
+
+            <!-- Submit Button -->
+            <div class="d-flex justify-content-center">
+                <button type="submit" class="btn btn-light fw-bold w-50 rounded-pill py-2">LOGIN</button>
             </div>
-            <div>
-                <button id="login-submit" type="submit" class="w-100 btn btn-primary">Log in</button>
-            </div>
+
+            <!-- Links -->
             <div class="text-center mt-3">
-                <p><a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a></p>
-                <p><a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Register as a new user</a></p>
+                <a asp-page="./" class="text-info d-block">Forgot password?</a>
+                <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="text-info">Register as a new user</a>
             </div>
         </form>
     </div>
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <!-- jQuery (MUST be loaded first) -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <!-- jQuery Validation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+
+    <!-- jQuery Validation Unobtrusive -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
 }
+

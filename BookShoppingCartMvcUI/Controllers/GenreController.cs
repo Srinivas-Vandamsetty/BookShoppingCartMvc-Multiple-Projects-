@@ -57,7 +57,7 @@ namespace BookShoppingCartMvcUI.Controllers
         // Load Update Genre view
         public async Task<IActionResult> UpdateGenre(int id)
         {
-            var genre = await _httpClient.GetFromJsonAsync<Genre>($"{_baseUrl}Genre/GetGenre/{id}");
+            var genre = await _httpClient.GetFromJsonAsync<Genre>($"{_baseUrl}Genre/GetGenreById/{id}");
 
             if (genre == null)
             {
@@ -76,7 +76,7 @@ namespace BookShoppingCartMvcUI.Controllers
                 return View(genre);
 
             var jsonContent = new StringContent(JsonSerializer.Serialize(genre), Encoding.UTF8, "application/json");
-            var response = await _httpClient.PutAsync($"{_baseUrl}Genre/UpdateGenre/{genre.Id}", jsonContent);
+            var response = await _httpClient.PutAsync($"{_baseUrl}Genre/UpdateGenre", jsonContent);
 
             if (response.IsSuccessStatusCode)
             {

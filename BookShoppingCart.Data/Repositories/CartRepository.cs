@@ -1,5 +1,6 @@
 ﻿using BookShoppingCart.Data.Data;
 using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -149,6 +150,96 @@ namespace BookShoppingCart.Data.Repositories
             return await _db.CartDetails
                 .Where(cd => cd.ShoppingCart.UserId == userId)
                 .SumAsync(cd => cd.Quantity);
+        }
+
+        public async Task<bool> DoCheckout(CheckoutModel model)
+        {
+            // Begin a transaction to group all operations safely – if one fails, everything is rolled back
+            using var transaction = await _db.Database.BeginTransactionAsync();
+            try
+            {
+                // Get the currently logged-in user's ID
+                var userId = GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                    throw new UnauthorizedAccessException("User is not logged-in");
+
+                // Retrieve the user's shopping cart
+                var cart = await GetCart(userId);
+                if (cart == null)
+                    throw new InvalidOperationException("Invalid cart");
+
+                // Fetch all cart items
+                var cartDetails = await _db.CartDetails
+                                           .Where(a => a.ShoppingCartId == cart.Id)
+                                           .ToListAsync();
+                if (cartDetails.Count == 0)
+                    throw new InvalidOperationException("Cart is empty");
+
+                // Get the order status with "Pending" status
+                var pendingStatus = await _db.OrderStatuses
+                                             .FirstOrDefaultAsync(s => s.StatusName == "Pending");
+                if (pendingStatus == null)
+                    throw new InvalidOperationException("Order status 'Pending' not found");
+
+                // Create a new order entry
+                var order = new Order
+                {
+                    UserId = userId,
+                    CreateDate = DateTime.UtcNow,
+                    Name = model.Name,
+                    Email = model.Email,
+                    MobileNumber = model.MobileNumber,
+                    PaymentMethod = model.PaymentMethod,
+                    Address = model.Address,
+                    IsPaid = false,
+                    OrderStatusId = pendingStatus.Id
+                };
+                _db.Orders.Add(order);
+                await _db.SaveChangesAsync();
+
+                // Add order details and update stock
+                foreach (var item in cartDetails)
+                {
+                    // Create order detail record for each cart item
+                    var orderDetail = new OrderDetail
+                    {
+                        BookId = item.BookId,
+                        OrderId = order.Id,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.UnitPrice
+                    };
+                    _db.OrderDetails.Add(orderDetail);
+
+                    // Fetch current stock for the book
+                    var stock = await _db.Stocks.FirstOrDefaultAsync(s => s.BookId == item.BookId);
+                    if (stock == null)
+                        throw new InvalidOperationException("Stock is null");
+
+                    // Check for stock availability
+                    if (item.Quantity > stock.Quantity)
+                        throw new InvalidOperationException($"Only {stock.Quantity} item(s) are available in stock");
+
+                    // Deduct ordered quantity from stock
+                    stock.Quantity -= item.Quantity;
+                }
+
+                // Remove cart details after successful order placement
+                _db.CartDetails.RemoveRange(cartDetails);
+
+                // Save all changes to database
+                await _db.SaveChangesAsync();
+
+                // Commit the transaction
+                await transaction.CommitAsync();
+
+                return true;
+            }
+            catch (Exception)
+            {
+                // Rollback if any error occurs
+                await transaction.RollbackAsync();
+                return false;
+            }
         }
 
         // Gets the currently logged-in user's ID.

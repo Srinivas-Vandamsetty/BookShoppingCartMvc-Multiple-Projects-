@@ -1,6 +1,7 @@
 ﻿using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace BookShoppingCart.Business.Services
@@ -20,6 +21,7 @@ namespace BookShoppingCart.Business.Services
         {
             return await _homeRepository.GetBooks(sTerm, genreId);
         }
+
 
         // Retrieve a list of available genres
         public async Task<IEnumerable<Genre>> GetGenres()

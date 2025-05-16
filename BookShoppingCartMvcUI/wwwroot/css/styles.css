@@ -1,6 +1,8 @@
-﻿.navbar {
+﻿/* ========== Navbar Styling ========== */
+.navbar {
     height: 60px;
     padding: 5px 15px;
+    background-color: #051922;
 }
 
 .navbar-brand {
@@ -9,80 +11,49 @@
 
 .navbar-nav .nav-link {
     padding: 5px 10px;
-}
-
-.navbar-nav .nav-link {
     transition: color 0.3s ease-in-out;
 }
 
-    /* Hover effect */
     .navbar-nav .nav-link:hover {
         color: #f39c12 !important;
     }
 
-/* Active Page Link */
 .navbar-nav .nav-item .nav-link.active {
     color: #f39c12 !important;
     font-weight: bold;
 }
 
-.icon
-{
+/* ========== Icon Styling ========== */
+.icon {
     width: 70px;
 }
 
-
+/* ========== Cart Badge Styling ========== */
 #cartCount {
     font-size: 10px;
     min-width: 18px;
     padding: 3px 6px;
 }
 
+/* ========== Custom Green Button Styling ========== */
 .custom-green-btn {
-    background-color: #28a745 !important; /* Bootstrap Success Green */
+    background-color: #28a745 !important;
     border-color: #28a745 !important;
     color: white !important;
 }
+
     .custom-green-btn:hover {
-        background-color: #218838 !important; /* Darker Green */
+        background-color: #218838 !important;
         border-color: #1e7e34 !important;
     }
-    /*.container {
-    margin-top: 20px;
-    min-height: calc(100vh - 150px);
-}
 
- Footer styling 
-.footer {
-    background-color: #1b32db;
-    color: white;
-    padding: 20px 0;
-    text-align: center;
-    position: relative;
-    width: 100%;
-}
-
-.footer-bottom {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid white;
-}
-
- Footer links styling 
-.footer a {
-    color: white;
-    text-decoration: none;
-}
-
-    .footer a:hover {
-        text-decoration: underline;
-    }*/
-
+/* ========== Container Fix ========== */
 .container-fluid {
     padding: 0 !important;
     margin-top: -8px;
 }
 
+/* ========== Image Styling ========== */
 .custom-img-container {
     height: auto;
     overflow: hidden;
@@ -95,3 +66,45 @@
     border-radius: 0.5rem;
 }
 
+/* styles.css */
+
+/* Custom input width */
+.input-group-custom {
+    width: 245px !important;
+}
+
+/* Book not found section */
+.book-not-found {
+    background-color: #343a40;
+    color: #f8f9fa;
+}
+
+/* Reset filters button style */
+.btn-reset-filters {
+    background-color: var(--bs-warning);
+    color: #343a40;
+    font-weight: 600;
+}
+
+/* Custom button for out of stock books */
+.btn.custom-green-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Pagination styles */
+.page-item .page-link.bg-warning {
+    background-color: #f0ad4e;
+    color: white;
+}
+
+    .page-item .page-link.bg-warning:hover {
+        background-color: #ec971f;
+    }
+
+/* Active pagination page */
+.page-item.active .page-link {
+    background-color: #343a40;
+    color: white;
+    font-weight: bold;
+}

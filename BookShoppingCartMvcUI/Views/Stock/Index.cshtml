@@ -2,29 +2,55 @@
 @{
     Layout = "_AdminLayout";
 }
-<h2>Stocks</h2>
 
-<form asp-action="Index" method="get" class="my-2 d-flex gap-2">
-    <input type="text" name="sTerm" class="form-control w-25" placeholder="Search by book" />
-    <button type="submit" class="btn btn-primary">Find</button>
-    <a asp-action="Index" asp-controller="Stock" class="btn btn-primary">Clear</a>
-</form>
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text--bs-gray-dark">📦 Stock Management</h2>
+    </div>
 
-<table class="table table-bordered">
-  <tr>
-    <th>Book</th>
-    <th>Stock</th>
-    <th>Actions</th>
-  </tr>
-  @foreach(var item in Model)
-  {
-    <tr>
-      <td>@item.BookName</td>
-      <td>@item.Quantity</td>
-      <td>
-         <a asp-action="ManangeStock" asp-controller="Stock" asp-route-bookId="@item.BookId" class="btn btn-info"> Update Stock</a>
-      </td>
-    </tr>
-  }
-</table>
+    <form asp-action="Index" method="get" class="d-flex flex-wrap gap-2 mb-4">
+        <input type="text" name="sTerm" class="form-control w-25" placeholder="Search by book name..." />
+        <button type="submit" class="btn btn-warning">
+            <i class="bi bi-search"></i> Search
+        </button>
+        <a asp-action="Index" asp-controller="Stock" class="btn btn-secondary">
+            <i class="bi bi-x-circle"></i> Clear
+        </a>
+    </form>
 
+    @if (Model?.Any() == true)
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover shadow-sm bg-white rounded-3">
+                <thead class="table-light">
+                    <tr>
+                        <th>Book</th>
+                        <th>Quantity In Stock</th>
+                        <th style="width: 180px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-medium">@item.BookName</td>
+                            <td>@item.Quantity</td>
+                            <td>
+                                <a asp-action="ManangeStock" asp-controller="Stock" asp-route-bookId="@item.BookId"
+                                   class="btn btn-warning">
+                                    <i class="bi bi-box-seam"></i> Update Stock
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning mt-3">
+            No stock records found. Try searching for another book.
+        </div>
+    }
+</div>

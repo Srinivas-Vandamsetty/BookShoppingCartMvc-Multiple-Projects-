@@ -1,59 +1,102 @@
 ﻿@using BookShoppingCart.Models.Models
 @model IEnumerable<Order>
+
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "AllOrders";
 }
-<div style="width:100%" class="mt-2">
-    <h4> Orders</h4>
-    @if (Model != null && Model.Count() > 0)
+
+<div class="container mt-4">
+    <h2 class="text--bs-gray-dark fw-bold mb-4">📋 All Orders</h2>
+
+    @if (Model != null && Model.Any())
     {
-        <table class="table table-striped">
-            <tr>
-                <th>OrderDate</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>MobileNo</th>
-                <th>Address</th>
-                <th>PaymentStatus</th>
-                <th>OrderStatus</th>
+        @foreach (var order in Model)
+        {
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Order Date:</strong> @order.CreateDate.ToString("dd-MM-yyyy")<br />
 
-                <th>Actions</th>
+                        @{
+                            var status = order.OrderStatus.StatusName.ToLower();
+                            var badgeColor = status switch
+                            {
+                                "pending" => "dimgray",
+                                "shipped" => "goldenrod",
+                                "delivered" => "seagreen",
+                                "refund" => "blue",
+                                "returned" or "cancelled" => "#dc3545",
+                                _ => "black"
+                            };
+                        }
 
-            </tr>
-            @foreach (var order in Model)
-            {
-                <tr>
-                    <td>@order.CreateDate.ToString("dd-MM-yyyy")</td>
-                    <td>@order.Name</td>
-                    <td>@order.MobileNumber</td>
-                    <td>@order.Email</td>
-                    <td>@order.Address</td>
-                    <td>@order.PaymentMethod | @(order.IsPaid ? "Paid" : "Not Paid")</td>
-                    <td>@order.OrderStatus.StatusName</td>
-                    <td>
-                        <button type="button" data-bs-toggle="modal" data-bs-target="#modal-@order.Id" class="btn btn-primary">
-                            Order-Detail
+                        <strong>Status:</strong>
+                        <span class="badge px-2 py-1 text-white" style="background-color:@badgeColor">
+                            @order.OrderStatus.StatusName
+                        </span>
+                    </div>
+
+                    <div>
+                        <strong>Payment:</strong>
+                        <span class="badge @(order.IsPaid ? "bg-success" : "bg-danger")">
+                            @order.PaymentMethod | @(order.IsPaid ? "Paid" : "Not Paid")
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <strong>Name:</strong><br />
+                            @order.Name
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Email:</strong><br />
+                            @order.Email
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Mobile No:</strong><br />
+                            @order.MobileNumber
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Address:</strong><br />
+                            @order.Address
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button"
+                                class="btn btn-outline-primary fw-bold text-dark"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modal-@order.Id">
+                            <i class="bi bi-eye"></i> Order Detail
                         </button>
-                        <a asp-action="UpdateOrderStatus" asp-route-orderId="@order.Id" class="btn btn-info">Change Order Status</a>
-                        <a asp-action="TogglePaymentStatus" asp-route-orderId="@order.Id" class="btn btn-info">Toggle Payment Status</a>
 
-                   @* appending modal div here *@
-                   @* Make sure to put this partial tag inside this td block, otherwise it can cause layout related problem*@
-                   @await Html.PartialAsync("/Views/AdminOperations/_OrderDetailModal.cshtml",new OrderDetailModalDTO{DivId=order.Id.ToString(), OrderDetail=order.OrderDetail})
-                    </td>
+                        <a asp-action="UpdateOrderStatus" asp-route-orderId="@order.Id"
+                           class="btn btn-outline-info fw-bold text-dark">
+                            <i class="bi bi-arrow-repeat"></i> Change Order Status
+                        </a>
 
-                </tr>
+                        <a asp-action="TogglePaymentStatus" asp-route-orderId="@order.Id"
+                           class="btn btn-outline-warning fw-bold text-dark">
+                            <i class="bi bi-cash-coin"></i> Toggle Payment Status
+                        </a>
+                    </div>
 
-            }
-        </table>
-
+                    @* Modal partial *@
+                    @await Html.PartialAsync("/Views/AdminOperations/_OrderDetailModal.cshtml",
+                             new OrderDetailModalDTO
+            {
+                DivId = order.Id.ToString(),
+                OrderDetail = order.OrderDetail
+            })
+                </div>
+            </div>
+        }
     }
     else
     {
-        <h5>No orders</h5>
+        <div class="alert alert-warning">No orders found.</div>
     }
-
-
 </div>
-

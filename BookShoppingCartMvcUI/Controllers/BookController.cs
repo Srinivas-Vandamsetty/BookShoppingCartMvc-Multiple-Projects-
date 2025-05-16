@@ -191,5 +191,16 @@ namespace BookShoppingCartMvcUI.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> BookDetails(int id)
+        {
+            var book = await _bookService.GetBookById(id);
+            if (book == null)
+            {
+                return NotFound();
+            }
+            return View(book);
+        }
     }
 }
