@@ -1,9 +1,16 @@
 ﻿@using BookShoppingCart.Models.Models
 @model ShoppingCart
+
 @{
     ViewData["Title"] = "GetUserCart";
-    var itemTotal = Model.CartDetails.Select(i => i.Book.Price * i.Quantity).Sum();
-    var shippingCharge = itemTotal >= 999 ? 0 : 50;
+
+    string couponCode = ViewBag.CouponCode as string ?? "";
+    decimal itemTotal = ViewBag.ItemTotal ?? 0m;
+    decimal discountRate = ViewBag.DiscountRate ?? 0m;
+    decimal discountAmount = ViewBag.DiscountAmount ?? 0m;
+    decimal shippingCharge = ViewBag.ShippingCharge ?? 0m;
+    decimal finalTotal = ViewBag.FinalTotal ?? 0m;
+    bool isValidCoupon = discountRate > 0;
 }
 
 <div class="container my-5">
@@ -29,7 +36,9 @@
                             {
                                 <tr>
                                     <td class="d-flex align-items-center">
-                                        <img src="@(string.IsNullOrEmpty(item.Book.Image) ? "/images/NoImage.png" : $"/images/{item.Book.Image}")" class="img-thumbnail me-3" style="width: 80px; height: 100px; object-fit: cover;" />
+                                        <img src="@(string.IsNullOrEmpty(item.Book.Image) ? "/images/NoImage.png" : $"/images/{item.Book.Image}")"
+                                             class="img-thumbnail me-3"
+                                             style="width: 80px; height: 100px; object-fit: cover;" />
                                         <div>
                                             <h6 class="mb-1">@item.Book.BookName</h6>
                                             <small class="badge bg-info text-black">@item.Book.Genre.GenreName</small><br />
@@ -41,7 +50,7 @@
                                             <span class="px-2">@item.Quantity</span>
                                             @if (item.Quantity < item.Book.Stock.Quantity)
                                             {
-                                                <a class="btn btn-outline-secondary btn-sm" href="/Cart/AddItem?bookId=@item.BookId&&redirect=1">+</a>
+                                                <a class="btn btn-outline-secondary btn-sm" href="/Cart/AddItem?bookId=@item.BookId&redirect=1">+</a>
                                             }
                                             else
                                             {
@@ -50,9 +59,7 @@
                                         </div>
                                     </td>
                                     <td class="text-end">₹@item.Book.Price.ToString("0.00")</td>
-                                    <td class="text-end">
-                                        ₹@((item.Book.Price * item.Quantity).ToString("0.00"))
-                                    </td>
+                                    <td class="text-end">₹@((item.Book.Price * item.Quantity).ToString("0.00"))</td>
                                 </tr>
                             }
                         </tbody>
@@ -65,34 +72,60 @@
             <div class="col-lg-4">
                 <div class="card p-4 shadow-sm">
                     <h5 class="mb-3">Order Summary</h5>
+
                     <div class="d-flex justify-content-between">
-                        <span>Items</span>
+                        <span>Items Total</span>
                         <span>₹@itemTotal.ToString("0.00")</span>
                     </div>
+
+                    <form method="get" class="my-2">
+                        <label class="form-label">Select Coupon</label>
+                        <div class="input-group">
+                            <select name="coupon" class="form-select">
+                                <option value="">-- Select Coupon --</option>
+                                <option value="SAVE10" selected="@(couponCode?.ToUpper() == "SAVE10" ? "selected" : null)">SAVE10 (10% off)</option>
+                                <option value="SAVE20" selected="@(couponCode?.ToUpper() == "SAVE20" ? "selected" : null)">SAVE20 (20% off)</option>
+                                <option value="FLAT50" selected="@(couponCode?.ToUpper() == "FLAT50" ? "selected" : null)">FLAT50 (50% off)</option>
+                            </select>
+                            <button type="submit" class="btn btn-outline-secondary">Apply</button>
+                        </div>
+                        @if (!string.IsNullOrEmpty(couponCode) && !isValidCoupon)
+                        {
+                            <div class="text-danger small mt-1">Invalid coupon code.</div>
+                        }
+                    </form>
+
+                    @if (isValidCoupon && discountRate > 0)
+                    {
+                        <div class="d-flex justify-content-between text-success">
+                            <span>Discount (@(discountRate * 100)%)</span>
+                            <span>-₹@discountAmount.ToString("0.00")</span>
+                        </div>
+                    }
+
                     <hr />
+
                     <div class="mb-3">
                         <label class="form-label">Shipping</label>
-                        @if (itemTotal >= 999)
+                        @if (shippingCharge == 0)
                         {
-                            <select id="shippingMethod" class="form-select" disabled>
-                                <option value="0" selected>Free shipping on orders over ₹999</option>
+                            <select class="form-select" disabled>
+                                <option selected>Free Shipping</option>
                             </select>
                         }
                         else
                         {
-                            <select id="shippingMethod" class="form-select">
-                                <option value="50" selected>Standard Delivery - ₹50.00</option>
-                                <option value="100">Express Delivery - ₹100.00</option>
+                            <select class="form-select" disabled>
+                                <option selected>Standard Delivery - ₹@shippingCharge.ToString("0.00")</option>
                             </select>
                         }
                     </div>
 
-                    <input type="hidden" id="baseTotalValue" value="@itemTotal" />
-
                     <div class="d-flex justify-content-between mb-3">
                         <strong>Total Cost</strong>
-                        <strong id="totalCostDisplay">₹@((itemTotal + shippingCharge).ToString("0.00"))</strong>
+                        <strong>₹@finalTotal.ToString("0.00")</strong>
                     </div>
+
                     <a href="/Cart/Checkout" class="btn btn-primary w-100">Checkout</a>
                 </div>
             </div>
@@ -108,7 +141,3 @@
         </div>
     }
 </div>
-
-@section Scripts {
-    <script src="~/js/shippingcart.js"></script>
-}

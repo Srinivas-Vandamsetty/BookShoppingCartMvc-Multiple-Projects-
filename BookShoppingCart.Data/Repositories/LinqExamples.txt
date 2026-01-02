@@ -1,0 +1,113 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace BookShoppingCart.Data.Repositories
+{
+    class LinqExamples
+    {
+
+
+        // BASIC LINQ EXAMPLES
+
+        // 1. Simple Where Clause
+        var expensiveBooks = _context.Books
+            .Where(b => b.Price > 500)
+            .ToList();
+
+        // 2. Select Projection
+        var bookNames = _context.Books
+            .Select(b => b.BookName)
+            .ToList();
+
+        // 3. Ordering
+        var orderedBooks = _context.Books
+            .OrderBy(b => b.BookName)
+            .ToList();
+
+        // 4. FirstOrDefault
+        var firstBook = _context.Books
+            .FirstOrDefault();
+
+        // 5. Any Condition
+        bool hasExpensiveBooks = _context.Books
+            .Any(b => b.Price > 1000);
+
+        // 6. Count
+        int totalBooks = _context.Books.Count();
+        """
+
+        // ADVANCED LINQ EXAMPLES
+
+
+        // 1. Join with Filtering and Projection
+        var booksWithGenre = from book in _context.Books
+                             join genre in _context.Genres on book.GenreId equals genre.Id
+                             where book.Price > 500
+                             select new {
+                                 book.BookName,
+                                 genre.GenreName,
+                                 book.Price
+                             };
+
+        // 2. Group By with Aggregation
+        var booksCountPerGenre = _context.Books
+            .GroupBy(b => b.GenreId)
+            .Select(g => new {
+                GenreId = g.Key,
+                BookCount = g.Count()
+            }).ToList();
+
+        // 3. Left Join (GroupJoin)
+        var booksWithStock = from book in _context.Books
+                             join stock in _context.Stocks on book.Id equals stock.BookId into stockGroup
+                             from s in stockGroup.DefaultIfEmpty()
+                             select new {
+                                 book.BookName,
+                                 Quantity = s != null ? s.Quantity : 0
+                             };
+
+        // 4. Subquery / Nested Query
+        var avgStock = _context.Stocks.Average(s => s.Quantity);
+        var booksAboveAvgStock = from book in _context.Books
+                                 join stock in _context.Stocks on book.Id equals stock.BookId
+                                 where stock.Quantity > avgStock
+                                 select new {
+                                     book.BookName,
+                                     stock.Quantity
+                                 };
+
+        // 5. Multi-Level Grouping
+        var groupedByGenrePublisher = _context.Books
+            .GroupBy(b => new { b.GenreId, b.PublisherId })
+            .Select(g => new {
+                g.Key.GenreId,
+                g.Key.PublisherId,
+                Count = g.Count()
+            }).ToList();
+
+        // 6. Flattening Collections with SelectMany
+        var allOrderedBooks = _context.Orders
+            .SelectMany(o => o.OrderDetail)
+            .Select(od => od.Book)
+            .Distinct()
+            .ToList();
+
+        // 7. Eager Loading
+        var order = _context.Orders
+            .Include(o => o.OrderDetail)
+            .ThenInclude(od => od.Book)
+            .FirstOrDefault(o => o.Id == orderId);
+
+        // 8. Dynamic Filtering
+        var query = _context.Books.AsQueryable();
+        if (!string.IsNullOrEmpty(searchTerm))
+            query = query.Where(b => b.BookName.Contains(searchTerm));
+        if (genreId > 0)
+            query = query.Where(b => b.GenreId == genreId);
+        var filteredBooks = await query.ToListAsync();
+
+    }
+}

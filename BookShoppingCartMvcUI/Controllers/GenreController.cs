@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using System.Net.Http.Json;
-using BookShoppingCart.Models.Models;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 
 namespace BookShoppingCartMvcUI.Controllers
 {

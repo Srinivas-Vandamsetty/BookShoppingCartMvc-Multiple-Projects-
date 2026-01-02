@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using System.Net.Http.Json;
-using BookShoppingCart.Models.Models.DTOs;
 
 namespace BookShoppingCartMvcUI.Controllers
 {

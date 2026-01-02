@@ -1,6 +1,9 @@
 ﻿using BookShoppingCart.Data.Data;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace BookShoppingCart.Data.Repositories
@@ -48,6 +51,12 @@ namespace BookShoppingCart.Data.Repositories
         public async Task<IEnumerable<T>> GetAllAsync()
         {
             return await _dbSet.ToListAsync();
+        }
+
+        // Get records by condition (e.g., all books with price > 500)
+        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet.Where(predicate).ToListAsync();
         }
     }
 }

@@ -1,51 +1,63 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using BookShoppingCart.Business.Services;
+using BookShoppingCart.Business.Strategies;
+using BookShoppingCart.Models.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using BookShoppingCart.Business.Services;
+using System.Threading.Tasks;
 
 namespace BookShoppingCartMvcUI.Controllers
 {
-    // Controller for handling shopping cart operations
     [Authorize]
     public class CartController : Controller
     {
         private readonly ICartService _cartService;
+        private readonly IDiscountService _discountService;
+        private readonly IShippingStrategy _shippingStrategy;
 
-        // Constructor to inject cart service
-        public CartController(ICartService cartService)
+        public CartController(ICartService cartService, IDiscountService discountService, IShippingStrategy shippingStrategy)
         {
             _cartService = cartService;
+            _discountService = discountService;
+            _shippingStrategy = shippingStrategy;
         }
 
-        // Adds an item to the cart
-        public async Task<IActionResult> AddItem(int bookId, int qty = 1, int redirect = 0)
-        {
-            var cartCount = await _cartService.AddItem(bookId, qty);
-
-            // If redirect flag is 0, return the cart count as a response
-            if (redirect == 0)
-                return Ok(cartCount);
-
-            // Otherwise, redirect to the user cart view
-            return RedirectToAction(nameof(GetUserCart));
-        }
-
-        // Removes an item from the cart
-        public async Task<IActionResult> RemoveItem(int bookId)
-        {
-            var cartCount = await _cartService.RemoveItem(bookId);
-
-            // Redirect to the user cart view after removal
-            return RedirectToAction(nameof(GetUserCart));
-        }
-
-        // Displays the user's cart
-        public async Task<IActionResult> GetUserCart()
+        public async Task<IActionResult> GetUserCart(string coupon = null)
         {
             var cart = await _cartService.GetUserCart() ?? new ShoppingCart { CartDetails = new List<CartDetail>() };
+
+            decimal itemTotal = (decimal)cart.CartDetails.Sum(cd => cd.Book.Price * cd.Quantity);
+
+            decimal discountAmount = _discountService.CalculateDiscountAmount(itemTotal, coupon);
+            decimal discountedTotal = itemTotal - discountAmount;
+
+            decimal shippingCharge = _shippingStrategy.CalculateShipping(discountedTotal);
+            decimal finalTotal = discountedTotal + shippingCharge;
+
+            ViewBag.CouponCode = coupon;
+            ViewBag.ItemTotal = itemTotal;
+            ViewBag.DiscountRate = _discountService.GetDiscountRate(coupon);
+            ViewBag.DiscountAmount = discountAmount;
+            ViewBag.ShippingCharge = shippingCharge;
+            ViewBag.FinalTotal = finalTotal;
+
             return View(cart);
         }
 
-        // Retrieves the total number of items in the cart
+
+        public async Task<IActionResult> AddItem(int bookId, int qty = 1, int redirect = 0)
+        {
+            var cartCount = await _cartService.AddItem(bookId, qty);
+            if (redirect == 0)
+                return Ok(cartCount);
+            return RedirectToAction(nameof(GetUserCart));
+        }
+
+        public async Task<IActionResult> RemoveItem(int bookId)
+        {
+            var cartCount = await _cartService.RemoveItem(bookId);
+            return RedirectToAction(nameof(GetUserCart));
+        }
+
         public async Task<IActionResult> GetTotalItemInCart()
         {
             int cartItem = await _cartService.GetCartItemCount();
@@ -71,7 +83,6 @@ namespace BookShoppingCartMvcUI.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Call the service instead of repository directly
             bool isCheckedOut = await _cartService.DoCheckout(model);
             if (!isCheckedOut)
                 return RedirectToAction(nameof(OrderFailure));

@@ -1,41 +1,37 @@
-using BookShoppingCart.Business.Services;
+﻿using BookShoppingCart.Business.Services;
 using BookShoppingCart.Data.Data;
 using BookShoppingCart.Data.Repositories;
-using BookStoreCore.Shared;
+using FastEndpoints;
+using FastEndpoints.Swagger;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add FastEndpoints (should come **before** AddControllers)
+builder.Services.AddFastEndpoints();
+
+// Add EF Core
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// Add Controllers (optional if using FastEndpoints only)
 builder.Services.AddControllers();
 
-// Register repositories
+// Register application services
+builder.Services.AddMemoryCache();
+
+// Register Repositories & Services
 builder.Services.AddScoped<IHomeRepository, HomeRepository>();
-builder.Services.AddScoped<IGenreService, GenreService>();
-//builder.Services.AddScoped<IBookRepository, BookRepository>();
-//builder.Services.AddScoped<IBookService, BookService>();
-//builder.Services.AddTransient<IFileService, FileService>();
-
-
-// Register services
 builder.Services.AddScoped<IHomeService, HomeService>();
 builder.Services.AddScoped<IGenreRepository, GenreRepository>();
+builder.Services.AddScoped<IGenreService, GenreService>();
 
-// Add Swagger
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Book Shopping Cart API", Version = "v1" });
-});
-
+// CORS
 var corsPolicy = "_myAllowSpecificOrigins";
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsPolicy,
@@ -47,13 +43,19 @@ builder.Services.AddCors(options =>
         });
 });
 
+// Swagger (with FastEndpoints support)
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Book Shopping Cart API", Version = "v1" });
+});
+builder.Services.SwaggerDocument();
+
 var app = builder.Build();
 
+// Middlewares order matters
 app.UseHttpsRedirection();
 app.UseCors(corsPolicy);
-app.UseAuthorization();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -64,6 +66,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseAuthorization();
+
+// Register FastEndpoints first
+app.UseFastEndpoints();
+
+// Map controllers if you use any MVC/WebAPI controllers
 app.MapControllers();
 
 app.Run();

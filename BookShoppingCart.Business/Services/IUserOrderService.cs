@@ -1,9 +1,6 @@
-﻿using BookShoppingCart.Models.Models.DTOs;
-using BookShoppingCart.Models.Models;
-using System;
+﻿using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models.DTOs;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BookShoppingCart.Business.Services

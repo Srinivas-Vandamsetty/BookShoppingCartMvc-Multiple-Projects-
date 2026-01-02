@@ -1,11 +1,8 @@
-﻿using Xunit;
-using Moq;
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using BookShoppingCart.WebAPI.Controllers;
-using BookShoppingCart.Business.Services;
+﻿using BookShoppingCart.Business.Services;
 using BookShoppingCart.Models.Models;
+using BookShoppingCart.WebAPI.Controllers;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
 
 namespace BookShoppingCart.Tests.Controllers
 {

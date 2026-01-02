@@ -1,11 +1,11 @@
-﻿using Moq;
+﻿using BookShoppingCart.Business.Services;
+using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models.DTOs;
+using BookShoppingCartMvcUI.Controllers;
+using BookStoreCore.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using BookShoppingCartMvcUI.Controllers;
-using BookShoppingCart.Business.Services;
-using BookShoppingCart.Models.Models.DTOs;
-using BookShoppingCart.Models.Models;
-using BookStoreCore.Shared;
+using Moq;
 
 namespace BookShoppingCart.Tests.Controllers
 {

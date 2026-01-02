@@ -1,9 +1,10 @@
 ﻿@{
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
 <!-- Hero Section with Background Image -->
-<div class="hero-section position-relative text-center text-white" style="background: url('/images/FrontPage.jpg') no-repeat center center/cover; height: 600px;">
+<div class="hero-section position-relative text-center text-white"
+     style="background: url('@Url.Content("~/images/FrontPage.jpg")') no-repeat center center/cover; height: 600px;">
+
     <div class="overlay position-absolute w-100 h-100" style="background: rgba(0, 0, 0, 0.5);"></div>
 
     <div class="position-absolute top-50 start-50 translate-middle">
@@ -11,7 +12,7 @@
         <h1 class="fw-bold">Explore a World of Books</h1>
         <div class="mt-3">
             <a asp-action="Index" asp-controller="Home" class="btn btn-warning btn-lg me-2 px-4">Browse Books</a>
-            <a href="/ContactUs" class="btn btn-outline-light btn-lg px-4">Contact Us</a>
+            <a href="@Url.Action("Contact", "FrontPage")" class="btn btn-outline-light btn-lg px-4">Contact Us</a>
         </div>
     </div>
 </div>
@@ -48,4 +49,3 @@
         </div>
     </div>
 </div>
-

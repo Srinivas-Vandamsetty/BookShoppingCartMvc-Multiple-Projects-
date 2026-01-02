@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using BookShoppingCart.Data.Repositories;
+﻿using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using BookStoreCore.Shared;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BookShoppingCart.Business.Services
 {

@@ -1,4 +1,5 @@
 ﻿using BookShoppingCart.Business.Services;
+using BookShoppingCart.Business.Strategies;
 using BookShoppingCart.Data.Data;
 using BookShoppingCart.Data.Repositories;
 using BookStoreCore.Shared;
@@ -23,6 +24,9 @@ builder.Services
     .AddDefaultTokenProviders();
 builder.Services.AddControllersWithViews();
 
+// Register application services
+builder.Services.AddMemoryCache();
+
 // Register repositories
 //builder.Services.AddScoped<IHomeRepository, HomeRepository>();
 builder.Services.AddScoped<IBookRepository, BookRepository>();
@@ -40,6 +44,9 @@ builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IUserOrderService, UserOrderService>();
+
+builder.Services.AddSingleton<IDiscountService, DiscountService>();
+builder.Services.AddScoped<IShippingStrategy, ShippingStrategy>();
 
 var app = builder.Build();
 

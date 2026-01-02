@@ -1,13 +1,13 @@
-﻿using BookShoppingCart.Models.Models;
+﻿using BookShoppingCart.Data.Data;
+using BookShoppingCart.Models.Models;
+using BookStoreCore.Constants;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BookStoreCore.Constants;
-using Microsoft.Extensions.DependencyInjection;
-using BookShoppingCart.Data.Data;
 
 namespace BookShoppingCartMvcUI.Data;
 

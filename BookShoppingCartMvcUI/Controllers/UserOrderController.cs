@@ -1,6 +1,6 @@
 ﻿using BookShoppingCart.Business.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookShoppingCartMvcUI.Controllers
 {

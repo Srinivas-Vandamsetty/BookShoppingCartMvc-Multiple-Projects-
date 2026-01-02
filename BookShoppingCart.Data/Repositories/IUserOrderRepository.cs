@@ -1,5 +1,5 @@
-﻿using BookShoppingCart.Models.Models.DTOs;
-using BookShoppingCart.Models.Models;
+﻿using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

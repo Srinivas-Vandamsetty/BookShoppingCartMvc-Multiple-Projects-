@@ -1,6 +1,6 @@
 ﻿using BookShoppingCart.Data.Data;
-using BookShoppingCart.Models.Models.DTOs;
 using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;

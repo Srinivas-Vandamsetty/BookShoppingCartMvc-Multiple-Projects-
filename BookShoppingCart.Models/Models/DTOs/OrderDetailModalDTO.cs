@@ -1,5 +1,4 @@
-﻿using BookShoppingCart.Models.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace BookShoppingCart.Models.Models.DTOs;
 

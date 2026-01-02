@@ -1,6 +1,8 @@
 ﻿using BookShoppingCart.Data.Data;
 using BookShoppingCart.Models.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,52 +12,59 @@ namespace BookShoppingCart.Data.Repositories
     public class HomeRepository : IHomeRepository
     {
         private readonly ApplicationDbContext _db;
+        private readonly IMemoryCache _cache;
 
-        public HomeRepository(ApplicationDbContext db)
+        public HomeRepository(ApplicationDbContext db, IMemoryCache cache)
         {
             _db = db;
+            _cache = cache;
         }
 
-        // Retrieves all available genres
+        // Caches and retrieves all genres
         public async Task<IEnumerable<Genre>> Genres()
         {
-            return await _db.Genres.ToListAsync();
+            return await _cache.GetOrCreateAsync("genres_cache", entry =>
+            {
+                // Cache for 30 mins
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
+                return _db.Genres.AsNoTracking().ToListAsync();
+            });
         }
 
-        // Retrieves books optionally filtered by search term and genreId
+        // Retrieves books with filters, search, and stock info
         public async Task<IEnumerable<Book>> GetBooks(string sTerm = "", int genreId = 0)
         {
-            var booksQuery = from book in _db.Books
-                             join genre in _db.Genres on book.GenreId equals genre.Id
-                             join stock in _db.Stocks on book.Id equals stock.BookId into bookStocks
+            var booksQuery = from book in _db.Books.AsNoTracking()
+                             join genre in _db.Genres.AsNoTracking() on book.GenreId equals genre.Id
+                             join stock in _db.Stocks.AsNoTracking() on book.Id equals stock.BookId into bookStocks
                              from bookWithStock in bookStocks.DefaultIfEmpty()
                              select new Book
                              {
                                  Id = book.Id,
-                                 Image = book.Image,
-                                 AuthorName = book.AuthorName,
                                  BookName = book.BookName,
+                                 AuthorName = book.AuthorName,
                                  GenreId = book.GenreId,
-                                 Price = book.Price,
                                  GenreName = genre.GenreName,
-                                 Quantity = bookWithStock == null ? 0 : bookWithStock.Quantity
+                                 Price = book.Price,
+                                 Image = book.Image,
+                                 Quantity = bookWithStock != null ? bookWithStock.Quantity : 0
                              };
 
-            // Apply genre filtering if a genre ID is provided greater than 0
+            // Apply genre filter
             if (genreId > 0)
             {
-                booksQuery = booksQuery.Where(book => book.GenreId == genreId);
+                booksQuery = booksQuery.Where(b => b.GenreId == genreId);
             }
 
-
+            // Apply search filter (case-insensitive)
             if (!string.IsNullOrWhiteSpace(sTerm))
             {
-                sTerm = sTerm.ToLower().Trim();
+                sTerm = sTerm.Trim().ToLower();
 
-                booksQuery = booksQuery.Where(book =>
-                    (book.BookName != null && book.BookName.ToLower().Contains(sTerm)) ||
-                    (book.AuthorName != null && book.AuthorName.ToLower().Contains(sTerm)) ||
-                    (book.GenreName != null && book.GenreName.ToLower().Contains(sTerm))
+                booksQuery = booksQuery.Where(b =>
+                    (b.BookName != null && b.BookName.ToLower().Contains(sTerm)) ||
+                    (b.AuthorName != null && b.AuthorName.ToLower().Contains(sTerm)) ||
+                    (b.GenreName != null && b.GenreName.ToLower().Contains(sTerm))
                 );
             }
 
