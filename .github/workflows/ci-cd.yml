@@ -16,23 +16,23 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '8.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore BookShoppingCart-Updated.sln
+      run: dotnet restore BookShoppingCartMvc.sln
 
-    - name: Build
-      run: dotnet build BookShoppingCart-Updated.sln --configuration Release --no-restore
+    - name: Build solution
+      run: dotnet build BookShoppingCartMvc.sln --configuration Release --no-restore
 
     - name: Run tests
-      run: dotnet test BookShoppingCart-Updated.sln --no-build --verbosity normal
+      run: dotnet test BookShoppingCartMvc.sln --no-build --verbosity normal
 
     - name: Login to Docker Hub
       run: |
         echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
         -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: Build Docker image
+    - name: Build Docker image (MVC UI)
       run: |
         docker build -t ${{ secrets.DOCKER_USERNAME }}/bookshoppingcart-ui:latest \
         -f BookShoppingCartMvcUI/Dockerfile .
