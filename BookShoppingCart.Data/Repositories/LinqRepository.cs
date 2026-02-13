@@ -106,7 +106,85 @@ namespace BookShoppingCart.Data.Demo
                     GenreName = b.Genre.GenreName
                 }).ToListAsync();
 
-        }
+            //GroupBy with Multiple Aggregations
+            var genreStatistics = await _context.Books
+                .GroupBy(b => b.GenreId)
+                .Select(g => new
+                {
+                    GenreId = g.Key,
+                    TotalBooks = g.Count(),
+                    MaxPrice = g.Max(b => b.Price),
+                    MinPrice = g.Min(b => b.Price),
+                    AvgPrice = g.Average(b => b.Price)
+                })
+                .ToListAsync();
 
+            // Conditional Projection (CASE WHEN equivalent)
+            var booksWithPriceCategory = await _context.Books
+                .Select(b => new
+                {
+                    b.BookName,
+                    b.Price,
+                    PriceCategory = b.Price > 1000 ? "Expensive" : "Affordable"
+                })
+                .ToListAsync();
+
+            // Pagination (Skip & Take)
+            int page = 2;
+            int pageSize = 10;
+
+            var pagedBooks = await _context.Books
+                .OrderBy(b => b.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Correlated Subquery
+            var booksWithOrderCount = await _context.Books
+                .Select(b => new
+                {
+                    b.BookName,
+                    OrderCount = _context.OrderDetails
+                        .Count(od => od.BookId == b.Id)
+                })
+                .ToListAsync();
+
+            // Cross Join
+            var crossJoinExample = await (
+                from b in _context.Books
+                from g in _context.Genres
+                select new
+                {
+                    b.BookName,
+                    g.GenreName
+                })
+                .ToListAsync();
+
+            // Set Operations (Intersect)
+            var expensiveBookIds = _context.Books
+                .Where(b => b.Price > 500)
+                .Select(b => b.Id);
+
+            var lowStockBookIds = _context.Stocks
+                .Where(s => s.Quantity < 5)
+                .Select(s => s.BookId);
+
+            var riskyBooks = await expensiveBookIds
+                .Intersect(lowStockBookIds)
+                .ToListAsync();
+
+            // AsNoTracking() for Read-Only Queries
+            var readOnlyBooks = await _context.Books
+                .AsNoTracking()
+                .Where(b => b.Price > 300)
+                .ToListAsync();
+
+            // Query Splitting (Avoid Cartesian Explosion)
+            var ordersWithDetailsSplitQuery = await _context.Orders
+                .Include(o => o.OrderDetail)
+                .ThenInclude(od => od.Book)
+                .AsSplitQuery()
+                .ToListAsync();
+        }
     }
 }

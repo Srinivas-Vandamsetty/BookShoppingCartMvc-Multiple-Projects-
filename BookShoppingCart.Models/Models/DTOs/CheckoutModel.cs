@@ -20,4 +20,7 @@ public class CheckoutModel
 
     [Required]
     public string PaymentMethod { get; set; }
+
+    [Required]
+    public decimal TotalAmount { get; set; }
 }

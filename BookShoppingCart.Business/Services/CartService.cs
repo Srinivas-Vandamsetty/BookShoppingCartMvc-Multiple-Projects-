@@ -1,48 +1,75 @@
-﻿using BookShoppingCart.Data.Repositories;
+﻿using BookShoppingCart.Business.Factories;
+using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using BookShoppingCart.Models.Models.DTOs;
+using System;
 using System.Threading.Tasks;
 
 namespace BookShoppingCart.Business.Services
 {
-    // Provides business logic for managing shopping cart operations.
     public class CartService : ICartService
     {
         private readonly ICartRepository _cartRepo;
 
-        // Initializes a new instance of the CartService class.
         public CartService(ICartRepository cartRepo)
         {
             _cartRepo = cartRepo;
         }
 
-        // Adds a book to the shopping cart or increases its quantity if already present.
+        // Adds a book to the shopping cart
         public async Task<int> AddItem(int bookId, int qty)
         {
+            if (bookId <= 0)
+                throw new ArgumentException("Invalid book id.");
+
+            if (qty <= 0)
+                throw new ArgumentException("Quantity must be greater than zero.");
+
             return await _cartRepo.AddItem(bookId, qty);
         }
 
-        // Removes a book from the shopping cart or decreases its quantity if more than one exists.
+        // Removes a book from the shopping cart
         public async Task<int> RemoveItem(int bookId)
         {
+            if (bookId <= 0)
+                throw new ArgumentException("Invalid book id.");
+
             return await _cartRepo.RemoveItem(bookId);
         }
 
-        // Retrieves the shopping cart for the currently logged-in user.
+        // Retrieves the shopping cart for current user
         public async Task<ShoppingCart> GetUserCart()
         {
-            return await _cartRepo.GetUserCart();
+            var cart = await _cartRepo.GetUserCart();
+
+            if (cart == null)
+                throw new Exception("Cart not found.");
+
+            return cart;
         }
 
-        // Gets the total number of items in the shopping cart.
+        // Gets total cart item count
         public async Task<int> GetCartItemCount(string userId = "")
         {
+            if (!string.IsNullOrWhiteSpace(userId) && userId.Length < 3)
+                throw new ArgumentException("Invalid user id.");
+
             return await _cartRepo.GetCartItemCount(userId);
         }
 
-        // Handles the checkout process by placing the order and updating stock
+        // Handles checkout process
         public async Task<bool> DoCheckout(CheckoutModel model)
         {
+            if (string.IsNullOrWhiteSpace(model.PaymentMethod))
+                throw new Exception("Payment method is required.");
+
+            var paymentService = PaymentFactory.Create(model.PaymentMethod);
+
+            bool paymentSuccess = await paymentService.ProcessPayment(model.TotalAmount);
+
+            if (!paymentSuccess)
+                throw new Exception("Payment failed.");
+
             return await _cartRepo.DoCheckout(model);
         }
     }

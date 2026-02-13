@@ -1,6 +1,7 @@
 ﻿using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using BookShoppingCart.Models.Models.DTOs;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -10,28 +11,42 @@ namespace BookShoppingCart.Business.Services
     {
         private readonly StockRepository _stockRepository;
 
-        // Constructor to inject StockRepository
         public StockService(StockRepository stockRepository)
         {
             _stockRepository = stockRepository;
         }
 
-        // Get all stock items (with optional search term)
-        public Task<IEnumerable<StockDisplayModel>> GetStocks(string sTerm = "")
+        // Get all stock items
+        public async Task<IEnumerable<StockDisplayModel>> GetStocks(string sTerm = "")
         {
-            return _stockRepository.GetStocks(sTerm);
+            if (sTerm != null && sTerm.Length > 100)
+                throw new ArgumentException("Search term too long.");
+
+            return await _stockRepository.GetStocks(sTerm);
         }
 
         // Get stock details by book ID
-        public Task<Stock?> GetStockByBookId(int bookId)
+        public async Task<Stock?> GetStockByBookId(int bookId)
         {
-            return _stockRepository.GetStockByBookId(bookId);
+            if (bookId <= 0)
+                throw new ArgumentException("Invalid book id.");
+
+            return await _stockRepository.GetStockByBookId(bookId);
         }
 
-        // Add or update stock for a book
-        public Task ManageStock(StockDTO stockToManage)
+        // Add or update stock
+        public async Task ManageStock(StockDTO stockToManage)
         {
-            return _stockRepository.ManageStock(stockToManage);
+            if (stockToManage == null)
+                throw new ArgumentNullException(nameof(stockToManage));
+
+            if (stockToManage.BookId <= 0)
+                throw new ArgumentException("Invalid book id.");
+
+            if (stockToManage.Quantity < 0)
+                throw new ArgumentException("Stock quantity cannot be negative.");
+
+            await _stockRepository.ManageStock(stockToManage);
         }
     }
 }
