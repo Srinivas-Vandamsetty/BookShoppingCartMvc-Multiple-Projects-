@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BookShoppingCart.Models.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,10 +9,16 @@ namespace BookShoppingCart.Business.Factories
 {
     public class CreditCardPaymentService : IPaymentService
     {
-        public Task<bool> ProcessPayment(decimal amount)
+        public async Task<PaymentResult> ProcessPayment(decimal amount)
         {
-            Console.WriteLine("Processing PayPal Payment");
-            return Task.FromResult(true);
+            await Task.Delay(500);
+
+            return new PaymentResult
+            {
+                IsSuccess = true,
+                TransactionId = Guid.NewGuid().ToString(),
+                Message = "Credit card payment processed successfully"
+            };
         }
     }
 }

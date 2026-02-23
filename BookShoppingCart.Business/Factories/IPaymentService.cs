@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BookShoppingCart.Models.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +9,7 @@ namespace BookShoppingCart.Business.Factories
 {
     public interface IPaymentService
     {
-        Task<bool> ProcessPayment(decimal amount);
+        Task<PaymentResult> ProcessPayment(decimal amount);
     }
 
 }
