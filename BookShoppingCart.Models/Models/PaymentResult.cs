@@ -11,5 +11,7 @@ namespace BookShoppingCart.Models.Models
         public bool IsSuccess { get; set; }
         public string TransactionId { get; set; }
         public string Message { get; set; }
+        public bool Success { get; set; }
+        public string ErrorMessage { get; set; }
     }
 }
