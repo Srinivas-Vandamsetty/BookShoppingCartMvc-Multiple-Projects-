@@ -65,10 +65,10 @@ namespace BookShoppingCart.Business.Services
 
             var paymentService = PaymentFactory.Create(model.PaymentMethod);
 
-            bool paymentSuccess = await paymentService.ProcessPayment(model.TotalAmount);
+            PaymentResult result = await paymentService.ProcessPayment(model.TotalAmount);
 
-            if (!paymentSuccess)
-                throw new Exception("Payment failed.");
+            if (!result.IsSuccess) 
+                throw new Exception(result.ErrorMessage ?? "Payment failed.");
 
             return await _cartRepo.DoCheckout(model);
         }
