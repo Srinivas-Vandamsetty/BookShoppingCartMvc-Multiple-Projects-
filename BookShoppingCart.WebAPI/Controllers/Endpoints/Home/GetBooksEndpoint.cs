@@ -20,6 +20,12 @@ public class GetBooksEndpoint : Endpoint<GetBooksRequest>
     {
         Get("/api/home/GetBooks");
         AllowAnonymous();
+
+        // Rate Limiting
+        Options(o =>
+        {
+            o.RequireRateLimiting("BooksPolicy");
+        });
     }
 
     public override async Task HandleAsync(GetBooksRequest req, CancellationToken ct)

@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Net.Http.Json;
 
 namespace BookShoppingCartMvcUI.Controllers
 {
@@ -6,39 +8,71 @@ namespace BookShoppingCartMvcUI.Controllers
     {
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
+        private readonly ILogger<HomeController> _logger;
 
-        // Constructor to initialize HttpClient and API base URL
-        public HomeController(HttpClient httpClient, IConfiguration configuration)
+        // Constructor
+        public HomeController(
+            HttpClient httpClient,
+            IConfiguration configuration,
+            ILogger<HomeController> logger)
         {
             _httpClient = httpClient;
+            _logger = logger;
+
             _baseUrl = configuration["ApiSettings:BaseUrl"]
                        ?? throw new ArgumentNullException(nameof(_baseUrl), "API base URL is not configured.");
         }
 
-        // Handles the request for the home page and fetches books and genres from the API
+        // Home Page
         public async Task<IActionResult> Index(string sTerm = "", int genreId = 0)
         {
-            // Fetch books from the API based on search term and genre ID
-            var books = await _httpClient.GetFromJsonAsync<IEnumerable<Book>>(
-                $"{_baseUrl}Home/GetBooks?sTerm={sTerm}&genreId={genreId}")
-                ?? Enumerable.Empty<Book>();
+            _logger.LogInformation(
+                "Loading Home page. SearchTerm: {SearchTerm}, GenreId: {GenreId}",
+                sTerm, genreId);
 
-            // Fetch available genres from the API
-            var genres = await _httpClient.GetFromJsonAsync<IEnumerable<Genre>>(
-                $"{_baseUrl}Home/GetGenres")
-                ?? Enumerable.Empty<Genre>();
-
-            // Create a model to pass data to the view
-            var bookModel = new BookDisplayModel
+            try
             {
-                Books = books,
-                Genres = genres,
-                STerm = sTerm,
-                GenreId = genreId
-            };
+                // Fetch books
+                var books = await _httpClient.GetFromJsonAsync<IEnumerable<Book>>(
+                    $"{_baseUrl}Home/GetBooks?sTerm={sTerm}&genreId={genreId}")
+                    ?? Enumerable.Empty<Book>();
 
-            // Return the view with the book model
-            return View(bookModel);
+                _logger.LogInformation("Fetched {BookCount} books", books.Count());
+
+                // Fetch genres
+                var genres = await _httpClient.GetFromJsonAsync<IEnumerable<Genre>>(
+                    $"{_baseUrl}Home/GetGenres")
+                    ?? Enumerable.Empty<Genre>();
+
+                _logger.LogInformation("Fetched {GenreCount} genres", genres.Count());
+
+                // Prepare model
+                var bookModel = new BookDisplayModel
+                {
+                    Books = books,
+                    Genres = genres,
+                    STerm = sTerm,
+                    GenreId = genreId
+                };
+
+                return View(bookModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error occurred while loading Home page. SearchTerm: {SearchTerm}, GenreId: {GenreId}",
+                    sTerm, genreId);
+
+                TempData["errorMessage"] = "Failed to load books. Please try again later.";
+
+                return View(new BookDisplayModel
+                {
+                    Books = Enumerable.Empty<Book>(),
+                    Genres = Enumerable.Empty<Genre>(),
+                    STerm = sTerm,
+                    GenreId = genreId
+                });
+            }
         }
     }
 }

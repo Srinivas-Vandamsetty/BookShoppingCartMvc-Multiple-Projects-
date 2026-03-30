@@ -31,8 +31,10 @@ namespace BookShoppingCart.Data.Repositories
             });
         }
 
-        // Retrieves books with filters, search, and stock info
-        public async Task<IEnumerable<Book>> GetBooks(string sTerm = "", int genreId = 0)
+        // Retrieves paginated list of books with optional search and genre filtering.
+        // Applies projection, AsNoTracking for performance optimization,
+        // and includes stock availability information.
+        public async Task<IEnumerable<Book>> GetBooks(string sTerm = "", int genreId = 0, int page = 1, int pageSize = 10)
         {
             var booksQuery = from book in _db.Books.AsNoTracking()
                              join genre in _db.Genres.AsNoTracking() on book.GenreId equals genre.Id

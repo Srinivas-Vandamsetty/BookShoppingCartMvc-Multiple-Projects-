@@ -30,7 +30,15 @@ namespace BookShoppingCart.Data.Repositories
         // Updates an existing entity in the database
         public async Task UpdateAsync(T entity)
         {
-            _dbSet.Update(entity);
+            // Get existing entity from database
+            var existing = await _dbSet.FindAsync(((dynamic)entity).Id);
+
+            if (existing == null)
+                throw new Exception("Entity not found");
+
+            // Update values of existing entity
+            _context.Entry(existing).CurrentValues.SetValues(entity);
+
             await _context.SaveChangesAsync();
         }
 

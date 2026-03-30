@@ -1,192 +1,190 @@
-﻿using BookShoppingCart.Business.Services;
+﻿using BookShoppingCart.Business.Facades;
+using BookShoppingCart.Business.Services;
+using BookShoppingCart.Models.Models.DTOs;
 using BookStoreCore.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace BookShoppingCartMvcUI.Controllers
 {
-    // Controller for managing books (Admin only)
     [Authorize(Roles = nameof(Roles.Admin))]
     public class BookController : Controller
     {
-        private readonly IBookService _bookService;
+        private readonly IBookFacade _bookFacade;
         private readonly IGenreService _genreService;
-        private readonly IFileService _fileService;
+        private readonly ILogger<BookController> _logger;
 
-        // Constructor to inject dependencies
-        public BookController(IBookService bookService, IGenreService genreService, IFileService fileService)
+        public BookController(
+            IBookFacade bookFacade,
+            IGenreService genreService,
+            ILogger<BookController> logger)
         {
-            _bookService = bookService;
+            _bookFacade = bookFacade;
             _genreService = genreService;
-            _fileService = fileService;
+            _logger = logger;
         }
 
-        // Displays the list of books
         public async Task<IActionResult> Index()
         {
-            var books = await _bookService.GetBooks();
+            var stopwatch = Stopwatch.StartNew();
+
+            _logger.LogInformation("Fetching book list");
+
+            var books = (await _bookFacade.GetBooks()).ToList();
+
+            stopwatch.Stop();
+
+            _logger.LogInformation(
+                "Fetched {Count} books in {ElapsedMilliseconds} ms",
+                books.Count,
+                stopwatch.ElapsedMilliseconds);
+
             return View(books);
         }
 
-        // Loads the Add Book view with genre options
         public async Task<IActionResult> AddBook()
         {
-            var genreSelectList = (await _genreService.GetGenres()).Select(genre => new SelectListItem
-            {
-                Text = genre.GenreName,
-                Value = genre.Id.ToString(),
-            });
+            _logger.LogInformation("Loading AddBook page");
 
-            BookDTO bookToAdd = new() { GenreList = genreSelectList };
-            return View(bookToAdd);
+            var genres = await _genreService.GetGenres();
+
+            var dto = new BookDTO
+            {
+                GenreList = genres.Select(g => new SelectListItem
+                {
+                    Text = g.GenreName,
+                    Value = g.Id.ToString()
+                })
+            };
+
+            return View(dto);
         }
 
-        // Handles adding a new book
         [HttpPost]
-        public async Task<IActionResult> AddBook(BookDTO bookToAdd)
+        public async Task<IActionResult> AddBook(BookDTO dto)
         {
-            // Reload genre list for dropdown
-            bookToAdd.GenreList = (await _genreService.GetGenres()).Select(genre => new SelectListItem
-            {
-                Text = genre.GenreName,
-                Value = genre.Id.ToString(),
-            });
-
             if (!ModelState.IsValid)
-                return View(bookToAdd);
+            {
+                _logger.LogWarning(
+                    "Invalid model state while adding book: {Errors}",
+                    ModelState.Values.SelectMany(v => v.Errors)
+                                     .Select(e => e.ErrorMessage));
+
+                return View(dto);
+            }
 
             try
             {
-                // Handle image file upload
-                if (bookToAdd.ImageFile != null)
-                {
-                    if (bookToAdd.ImageFile.Length > 1 * 1024 * 1024) // 1MB limit
-                        throw new InvalidOperationException("Image file cannot exceed 1 MB");
+                await _bookFacade.AddBook(dto);
 
-                    string[] allowedExtensions = [".jpeg", ".jpg", ".png"];
-                    bookToAdd.Image = await _fileService.SaveFile(bookToAdd.ImageFile, allowedExtensions);
-                }
+                _logger.LogInformation(
+                    "Book added successfully: {BookName}",
+                    dto.BookName);
 
-                // Create a book entity and save it
-                Book book = new()
-                {
-                    BookName = bookToAdd.BookName,
-                    AuthorName = bookToAdd.AuthorName,
-                    Image = bookToAdd.Image,
-                    GenreId = bookToAdd.GenreId,
-                    Price = bookToAdd.Price
-                };
-
-                await _bookService.AddBook(book);
                 TempData["successMessage"] = "Book added successfully";
                 return RedirectToAction(nameof(AddBook));
             }
             catch (Exception ex)
             {
-                TempData["errorMessage"] = ex.Message;
-                return View(bookToAdd);
+                _logger.LogError(ex,
+                    "Error occurred while adding book: {BookName}",
+                    dto.BookName);
+
+                TempData["errorMessage"] = "Something went wrong.";
+                return View(dto);
             }
         }
 
-        // Loads the Update Book view with book details
         public async Task<IActionResult> UpdateBook(int id)
         {
-            var book = await _bookService.GetBookById(id);
+            _logger.LogInformation("Loading UpdateBook page for ID {Id}", id);
+
+            var book = await _bookFacade.GetBookById(id);
+
             if (book == null)
             {
-                TempData["errorMessage"] = $"Book with ID {id} not found";
+                _logger.LogWarning("Book not found for ID {Id}", id);
+                TempData["errorMessage"] = "Book not found";
                 return RedirectToAction(nameof(Index));
             }
 
-            // Load genres and select the book's genre
-            var genreSelectList = (await _genreService.GetGenres()).Select(genre => new SelectListItem
-            {
-                Text = genre.GenreName,
-                Value = genre.Id.ToString(),
-                Selected = genre.Id == book.GenreId
-            });
+            var genres = await _genreService.GetGenres();
 
-            BookDTO bookToUpdate = new()
+            var dto = new BookDTO
             {
-                GenreList = genreSelectList,
+                Id = book.Id,
                 BookName = book.BookName,
                 AuthorName = book.AuthorName,
                 GenreId = book.GenreId,
                 Price = book.Price,
-                Image = book.Image
+                Image = book.Image,
+                GenreList = genres.Select(g => new SelectListItem
+                {
+                    Text = g.GenreName,
+                    Value = g.Id.ToString(),
+                    Selected = g.Id == book.GenreId
+                })
             };
 
-            return View(bookToUpdate);
+            return View(dto);
         }
 
-        // Handles updating an existing book
         [HttpPost]
-        public async Task<IActionResult> UpdateBook(BookDTO bookToUpdate)
+        public async Task<IActionResult> UpdateBook(BookDTO dto)
         {
-            // Reload genre list for dropdown
-            bookToUpdate.GenreList = (await _genreService.GetGenres()).Select(genre => new SelectListItem
-            {
-                Text = genre.GenreName,
-                Value = genre.Id.ToString(),
-                Selected = genre.Id == bookToUpdate.GenreId
-            });
-
             if (!ModelState.IsValid)
-                return View(bookToUpdate);
+            {
+                _logger.LogWarning(
+                    "Invalid model state while updating book ID {Id}",
+                    dto.Id);
+
+                return View(dto);
+            }
 
             try
             {
-                string oldImage = bookToUpdate.Image;
+                await _bookFacade.UpdateBook(dto);
 
-                // Handle new image file upload
-                if (bookToUpdate.ImageFile != null)
-                {
-                    if (bookToUpdate.ImageFile.Length > 1 * 1024 * 1024) // 1MB limit
-                        throw new InvalidOperationException("Image file cannot exceed 1 MB");
-
-                    string[] allowedExtensions = [".jpeg", ".jpg", ".png"];
-                    bookToUpdate.Image = await _fileService.SaveFile(bookToUpdate.ImageFile, allowedExtensions);
-                }
-
-                // Update book details
-                Book book = new()
-                {
-                    Id = bookToUpdate.Id,
-                    BookName = bookToUpdate.BookName,
-                    AuthorName = bookToUpdate.AuthorName,
-                    GenreId = bookToUpdate.GenreId,
-                    Price = bookToUpdate.Price,
-                    Image = bookToUpdate.Image
-                };
-
-                await _bookService.UpdateBook(book);
-
-                // Delete old image if it was replaced
-                if (!string.IsNullOrWhiteSpace(oldImage) && oldImage != bookToUpdate.Image)
-                    _fileService.DeleteFile(oldImage);
+                _logger.LogInformation(
+                    "Book updated successfully: {BookName}",
+                    dto.BookName);
 
                 TempData["successMessage"] = "Book updated successfully";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["errorMessage"] = ex.Message;
-                return View(bookToUpdate);
+                _logger.LogError(ex,
+                    "Error occurred while updating book ID {Id}",
+                    dto.Id);
+
+                TempData["errorMessage"] = "Something went wrong.";
+                return View(dto);
             }
         }
 
-        // Handles deleting a book
         public async Task<IActionResult> DeleteBook(int id)
         {
             try
             {
-                await _bookService.DeleteBook(id);
+                await _bookFacade.DeleteBook(id);
+
+                _logger.LogInformation(
+                    "Book deleted successfully for ID {Id}",
+                    id);
+
                 TempData["successMessage"] = "Book deleted successfully";
             }
             catch (Exception ex)
             {
-                TempData["errorMessage"] = ex.Message;
+                _logger.LogError(ex,
+                    "Error occurred while deleting book ID {Id}",
+                    id);
+
+                TempData["errorMessage"] = "Something went wrong.";
             }
 
             return RedirectToAction(nameof(Index));
@@ -195,12 +193,36 @@ namespace BookShoppingCartMvcUI.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> BookDetails(int id)
         {
-            var book = await _bookService.GetBookById(id);
+            var book = await _bookFacade.GetBookById(id);
             if (book == null)
             {
                 return NotFound();
             }
             return View(book);
+        }
+
+        public async Task<IActionResult> CloneBook(int id)
+        {
+            try
+            {
+                await _bookFacade.CloneBook(id);
+
+                _logger.LogInformation(
+                    "Book cloned successfully for ID {Id}",
+                    id);
+
+                TempData["successMessage"] = "Book cloned successfully";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error occurred while cloning book ID {Id}",
+                    id);
+
+                TempData["errorMessage"] = "Something went wrong.";
+            }
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }

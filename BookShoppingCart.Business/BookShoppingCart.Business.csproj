@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BookShoppingCart.Data\BookShoppingCart.Data.csproj" />
+    <ProjectReference Include="..\BookShoppingCart.Models\BookShoppingCart.Models.csproj" />
     <ProjectReference Include="..\BookShoppingCartMvcCore\BookStoreCore.csproj" />
   </ItemGroup>
 </Project>

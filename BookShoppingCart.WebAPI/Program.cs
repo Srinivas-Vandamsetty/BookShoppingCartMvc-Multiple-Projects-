@@ -3,8 +3,10 @@ using BookShoppingCart.Data.Data;
 using BookShoppingCart.Data.Repositories;
 using FastEndpoints;
 using FastEndpoints.Swagger;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +31,30 @@ builder.Services.AddScoped<IHomeRepository, HomeRepository>();
 builder.Services.AddScoped<IHomeService, HomeService>();
 builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 builder.Services.AddScoped<IGenreService, GenreService>();
+
+// Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("BooksPolicy", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,                  // 10 requests
+                Window = TimeSpan.FromMinutes(1),  // per 1 minute
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 2
+            }));
+});
+
+// Output Caching
+builder.Services.AddOutputCache(options =>
+{
+    options.AddPolicy("GenreCache", policy =>
+    {
+        policy.Expire(TimeSpan.FromSeconds(60));
+    });
+});
 
 // CORS
 var corsPolicy = "_myAllowSpecificOrigins";
@@ -73,5 +99,11 @@ app.UseFastEndpoints();
 
 // Map controllers if you use any MVC/WebAPI controllers
 app.MapControllers();
+
+app.UseRouting();
+
+app.UseOutputCache();
+
+app.UseRateLimiter();
 
 app.Run();

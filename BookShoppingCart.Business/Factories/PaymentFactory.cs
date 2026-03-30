@@ -14,7 +14,7 @@ namespace BookShoppingCart.Business.Factories
             {
                 "cash" => new CashPaymentService(),
                 "creditcard" => new CreditCardPaymentService(),
-                "paypal" => new UpiPaymentService(),
+                "upi" => new UpiPaymentService(),
                 _ => throw new ArgumentException("Invalid payment method")
             };
         }

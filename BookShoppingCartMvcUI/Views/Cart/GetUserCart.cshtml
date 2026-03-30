@@ -109,15 +109,12 @@
                         <label class="form-label">Shipping</label>
                         @if (shippingCharge == 0)
                         {
-                            <select class="form-select" disabled>
-                                <option selected>Free Shipping</option>
-                            </select>
+                            <input type="text" class="form-control" disabled value="Free Shipping" readonly />
                         }
                         else
                         {
-                            <select class="form-select" disabled>
-                                <option selected>Standard Delivery - ₹@shippingCharge.ToString("0.00")</option>
-                            </select>
+                            <input type="text" class="form-control" disabled
+                                       value="Standard Delivery - ₹@shippingCharge.ToString("0.00")" readonly />
                         }
                     </div>
 

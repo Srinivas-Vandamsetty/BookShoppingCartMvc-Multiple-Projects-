@@ -1,20 +1,24 @@
-﻿using BookShoppingCart.Business.Services;
+﻿using BookShoppingCart.Business.Facades;
+using BookShoppingCart.Business.Proxies;
+using BookShoppingCart.Business.Services;
 using BookShoppingCart.Business.Strategies;
 using BookShoppingCart.Data.Data;
 using BookShoppingCart.Data.Repositories;
+using BookShoppingCartMvcUI.Middleware;
 using BookStoreCore.Shared;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Registers HttpClient for dependency injection to make HTTP requests
 builder.Services.AddHttpClient();
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services
@@ -22,13 +26,12 @@ builder.Services
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultUI()
     .AddDefaultTokenProviders();
+
 builder.Services.AddControllersWithViews();
 
-// Register application services
 builder.Services.AddMemoryCache();
 
-// Register repositories
-//builder.Services.AddScoped<IHomeRepository, HomeRepository>();
+// Repositories
 builder.Services.AddScoped<IBookRepository, BookRepository>();
 builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
@@ -36,9 +39,15 @@ builder.Services.AddScoped<StockRepository>();
 builder.Services.AddScoped<IUserOrderRepository, UserOrderRepository>();
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 
-// Register services
-builder.Services.AddScoped<IBookService, BookService>();
-//builder.Services.AddScoped<IHomeService, HomeService>();
+// Services + Proxy
+builder.Services.AddScoped<BookService>();
+builder.Services.AddScoped<IBookService>(provider =>
+{
+    var realService = provider.GetRequiredService<BookService>();
+    return new BookServiceProxy(realService);
+});
+
+builder.Services.AddScoped<IBookFacade, BookFacade>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IGenreService, GenreService>();
 builder.Services.AddScoped<ICartService, CartService>();
@@ -46,12 +55,11 @@ builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IUserOrderService, UserOrderService>();
 
 builder.Services.AddSingleton<IDiscountService, DiscountService>();
-builder.Services.AddScoped<IShippingStrategy, ShippingStrategy>();
+builder.Services.AddScoped<IShippingStrategy, StandardShippingStrategy>();
 
 var app = builder.Build();
 
-
-// Database Seeding Logic
+// Database seeding
 using (var scope = app.Services.CreateScope())
 {
     var serviceProvider = scope.ServiceProvider;
@@ -66,15 +74,15 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline.
+// Global Exception Middleware
+app.UseMiddleware<ExceptionMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 

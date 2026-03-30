@@ -2,14 +2,14 @@
 
 namespace BookShoppingCart.Business.Strategies
 {
-    public class ShippingStrategy : IShippingStrategy
+    public class StandardShippingStrategy : IShippingStrategy
     {
         private const decimal StandardCharge = 50;
-        private const decimal FreeShipping = 999;
+        private const decimal FreeShippingThreshold = 999;
 
         public decimal CalculateShipping(decimal discountedTotal)
         {
-            if (discountedTotal >= FreeShipping)
+            if (discountedTotal >= FreeShippingThreshold)
             {
                 return 0;
             }

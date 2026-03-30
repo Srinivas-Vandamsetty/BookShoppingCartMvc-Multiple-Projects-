@@ -31,6 +31,17 @@ namespace BookShoppingCart.Models.Models
         [NotMapped]
         public int Quantity { get; set; }
 
-
+        public Book Clone()
+        {
+            return new Book
+            {
+                BookName = this.BookName,
+                AuthorName = this.AuthorName,
+                Price = this.Price,
+                Image = this.Image,
+                GenreId = this.GenreId
+ 
+            };
+        }
     }
 }
