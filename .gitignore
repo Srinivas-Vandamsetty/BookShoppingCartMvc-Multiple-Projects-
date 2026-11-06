@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Local development email contains private confirmation/reset tokens.
+.email-outbox/
+*.validation.log
+/.env
+/.docker-local/
+build-validation.log

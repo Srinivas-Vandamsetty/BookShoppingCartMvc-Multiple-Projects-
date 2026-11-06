@@ -1,4 +1,4 @@
-﻿@using BookShoppingCart.Models.Models.DTOs
+@using BookShoppingCart.Models.Models.DTOs
 @model BookDTO
 @{
     Layout = "_AdminLayout";
@@ -13,6 +13,7 @@
     </div>
 
     <form asp-action="AddBook" enctype="multipart/form-data" class="shadow-lg p-4 bg-white rounded-4" style="box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);">
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
         <div class="mb-3">
             <label class="form-label fw-bold text-dark">Book Name*</label>
             <input type="text" class="form-control" asp-for="BookName" />
@@ -51,3 +52,5 @@
         </div>
     </form>
 </div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

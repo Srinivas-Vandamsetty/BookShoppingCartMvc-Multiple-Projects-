@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models;
 using BookShoppingCart.Models.Models.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -9,7 +9,7 @@ namespace BookShoppingCart.Business.Services
     // changing status, toggling payment, and retrieving order details.
     public interface IUserOrderService
     {
-        Task<IEnumerable<Order>> GetUserOrders(bool getAll = false);
+        Task<IEnumerable<Order>> GetUserOrders(bool getAll = false, int page = 1);
         Task ChangeOrderStatus(UpdateOrderStatusModel data);
         Task TogglePaymentStatus(int orderId);
         Task<Order?> GetOrderById(int id);

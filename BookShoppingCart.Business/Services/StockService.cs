@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Data.Repositories;
+using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using BookShoppingCart.Models.Models.DTOs;
 using System;
@@ -9,20 +9,20 @@ namespace BookShoppingCart.Business.Services
 {
     public class StockService : IStockService
     {
-        private readonly StockRepository _stockRepository;
+        private readonly IStockRepository _stockRepository;
 
-        public StockService(StockRepository stockRepository)
+        public StockService(IStockRepository stockRepository)
         {
             _stockRepository = stockRepository;
         }
 
         // Get all stock items
-        public async Task<IEnumerable<StockDisplayModel>> GetStocks(string sTerm = "")
+        public async Task<IEnumerable<StockDisplayModel>> GetStocks(string sTerm = "", int page = 1)
         {
-            if (sTerm != null && sTerm.Length > 100)
+            if (page is < 1 or > 100000 || (sTerm != null && sTerm.Length > 100))
                 throw new ArgumentException("Search term too long.");
 
-            return await _stockRepository.GetStocks(sTerm);
+            return await _stockRepository.GetStocks(sTerm ?? "", page);
         }
 
         // Get stock details by book ID

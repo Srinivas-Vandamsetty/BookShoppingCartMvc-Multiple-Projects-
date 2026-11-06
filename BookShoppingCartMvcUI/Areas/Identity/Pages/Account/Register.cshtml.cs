@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
+using System.Text.Encodings.Web;
 
 namespace BookShoppingCartMvcUI.Areas.Identity.Pages.Account
 {
@@ -118,16 +121,16 @@ namespace BookShoppingCartMvcUI.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
-                    // Assign role to user
-                    await _userManager.AddToRoleAsync(user, Roles.User.ToString());
-                    _logger.LogInformation("User created a new account with password.");
-
-                    // Set EmailConfirmed = true since you removed email confirmation
-                    user.EmailConfirmed = true;
-                    await _userManager.UpdateAsync(user);
-
-                    // Redirect to login page instead of signing in automatically
-                    return RedirectToPage("/Account/Login");
+                    var roleResult = await _userManager.AddToRoleAsync(user, Roles.User.ToString());
+                    if (!roleResult.Succeeded) throw new InvalidOperationException("User role initialization failed.");
+                    _logger.LogInformation("User registered; awaiting email confirmation.");
+                    var token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(
+                        await _userManager.GenerateEmailConfirmationTokenAsync(user)));
+                    var callback = Url.Page("/Account/ConfirmEmail", null,
+                        new { area = "Identity", userId = user.Id, code = token }, Request.Scheme);
+                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                        $"Confirm your account by <a href='{HtmlEncoder.Default.Encode(callback!)}'>clicking here</a>.");
+                    return RedirectToPage("./RegisterConfirmation", new { email = Input.Email });
                 }
 
                 foreach (var error in result.Errors)

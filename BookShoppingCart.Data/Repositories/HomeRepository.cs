@@ -1,76 +1,42 @@
-﻿using BookShoppingCart.Data.Data;
+using BookShoppingCart.Data.Data;
 using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace BookShoppingCart.Data.Repositories
+namespace BookShoppingCart.Data.Repositories;
+public class HomeRepository(ApplicationDbContext db) : IHomeRepository
 {
-    public class HomeRepository : IHomeRepository
+    public async Task<IEnumerable<Genre>> Genres() =>
+        await db.Genres.AsNoTracking().OrderBy(g => g.GenreName).ToListAsync();
+
+    public async Task<IEnumerable<Book>> GetBooks(string sTerm = "", int genreId = 0, int page = 1, int pageSize = 10)
     {
-        private readonly ApplicationDbContext _db;
-        private readonly IMemoryCache _cache;
-
-        public HomeRepository(ApplicationDbContext db, IMemoryCache cache)
+        var result = await SearchBooks(sTerm, genreId, page, pageSize);
+        return result.Items.Select(b => new Book
         {
-            _db = db;
-            _cache = cache;
-        }
+            Id = b.Id, BookName = b.BookName, AuthorName = b.AuthorName, Price = b.Price,
+            Image = b.Image, GenreId = b.GenreId, GenreName = b.GenreName, Quantity = b.Quantity
+        }).ToList();
+    }
 
-        // Caches and retrieves all genres
-        public async Task<IEnumerable<Genre>> Genres()
-        {
-            return await _cache.GetOrCreateAsync("genres_cache", entry =>
+    public async Task<PagedBooks> SearchBooks(string sTerm = "", int genreId = 0, int page = 1, int pageSize = 12, CancellationToken ct = default)
+    {
+        var search = (sTerm ?? "").Trim();
+        if (search.Length > 100 || genreId < 0 || page < 1 || page > 100000 || pageSize is < 1 or > 100)
+            throw new ArgumentException("Invalid search or page parameters.");
+        var query = db.Books.AsNoTracking().Where(b => !b.IsArchived);
+        if (genreId > 0) query = query.Where(b => b.GenreId == genreId);
+        if (search.Length > 0)
+            query = query.Where(b => b.BookName.Contains(search) || b.AuthorName.Contains(search) || b.Genre.GenreName.Contains(search));
+        var count = await query.CountAsync(ct);
+        page = Math.Min(page, Math.Max(1, (count + pageSize - 1) / pageSize));
+        var items = await query.OrderBy(b => b.Id).Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(b => new BookListDTO
             {
-                // Cache for 30 mins
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
-                return _db.Genres.AsNoTracking().ToListAsync();
-            });
-        }
-
-        // Retrieves paginated list of books with optional search and genre filtering.
-        // Applies projection, AsNoTracking for performance optimization,
-        // and includes stock availability information.
-        public async Task<IEnumerable<Book>> GetBooks(string sTerm = "", int genreId = 0, int page = 1, int pageSize = 10)
-        {
-            var booksQuery = from book in _db.Books.AsNoTracking()
-                             join genre in _db.Genres.AsNoTracking() on book.GenreId equals genre.Id
-                             join stock in _db.Stocks.AsNoTracking() on book.Id equals stock.BookId into bookStocks
-                             from bookWithStock in bookStocks.DefaultIfEmpty()
-                             select new Book
-                             {
-                                 Id = book.Id,
-                                 BookName = book.BookName,
-                                 AuthorName = book.AuthorName,
-                                 GenreId = book.GenreId,
-                                 GenreName = genre.GenreName,
-                                 Price = book.Price,
-                                 Image = book.Image,
-                                 Quantity = bookWithStock != null ? bookWithStock.Quantity : 0
-                             };
-
-            // Apply genre filter
-            if (genreId > 0)
-            {
-                booksQuery = booksQuery.Where(b => b.GenreId == genreId);
-            }
-
-            // Apply search filter (case-insensitive)
-            if (!string.IsNullOrWhiteSpace(sTerm))
-            {
-                sTerm = sTerm.Trim().ToLower();
-
-                booksQuery = booksQuery.Where(b =>
-                    (b.BookName != null && b.BookName.ToLower().Contains(sTerm)) ||
-                    (b.AuthorName != null && b.AuthorName.ToLower().Contains(sTerm)) ||
-                    (b.GenreName != null && b.GenreName.ToLower().Contains(sTerm))
-                );
-            }
-
-            return await booksQuery.ToListAsync();
-        }
+                Id = b.Id, BookName = b.BookName, AuthorName = b.AuthorName, Price = b.Price,
+                Image = b.Image, GenreId = b.GenreId, GenreName = b.Genre.GenreName,
+                Quantity = b.Stock == null ? 0 : b.Stock.Quantity
+            }).ToListAsync(ct);
+        return new PagedBooks { Items = items, TotalCount = count, Page = page, PageSize = pageSize };
     }
 }

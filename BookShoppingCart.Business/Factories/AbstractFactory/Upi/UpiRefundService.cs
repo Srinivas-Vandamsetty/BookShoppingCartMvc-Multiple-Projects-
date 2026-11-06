@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Business.Factories.AbstractFactory.Interfaces;
+using BookShoppingCart.Business.Factories.AbstractFactory.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +9,7 @@ namespace BookShoppingCart.Business.Factories.AbstractFactory.Upi
 {
     public class UpiRefundService : IRefundService
     {
-        public async Task<bool> Refund(string transactionId)
-        {
-            await Task.Delay(300);
-            return true;
-        }
+        public Task<bool> Refund(string transactionId) =>
+            throw new NotSupportedException("A verified refund provider is not configured.");
     }
 }

@@ -1,0 +1,6 @@
+@{ int page = ViewBag.Page ?? 1; bool next = ViewBag.HasNext ?? false; }
+<nav aria-label="Result pages" class="my-3">
+@if (page > 1) { <a asp-route-status="@ViewBag.StatusFilter" asp-route-search="@ViewBag.Search" asp-route-page="@(page - 1)" asp-route-sTerm="@Context.Request.Query["sTerm"]" class="btn btn-outline-secondary">Previous</a> }
+<span class="mx-2">Page @(page)</span>
+@if (next) { <a asp-route-status="@ViewBag.StatusFilter" asp-route-search="@ViewBag.Search" asp-route-page="@(page + 1)" asp-route-sTerm="@Context.Request.Query["sTerm"]" class="btn btn-outline-secondary">Next</a> }
+</nav>

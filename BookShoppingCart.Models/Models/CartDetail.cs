@@ -1,4 +1,4 @@
-﻿using Microsoft.Build.Framework;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookShoppingCart.Models.Models
@@ -14,8 +14,8 @@ namespace BookShoppingCart.Models.Models
         [Required]
         public int Quantity { get; set; }
         [Required]
-        public double UnitPrice { get; set; }
-        public Book Book { get; set; }
-        public ShoppingCart ShoppingCart { get; set; }
+        public decimal UnitPrice { get; set; }
+        public Book Book { get; set; } = null!;
+        public ShoppingCart ShoppingCart { get; set; } = null!;
     }
 }

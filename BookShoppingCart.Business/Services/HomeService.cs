@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Data.Repositories;
+using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,6 +14,9 @@ namespace BookShoppingCart.Business.Services
         {
             _homeRepository = homeRepository;
         }
+
+        public Task<BookShoppingCart.Models.Models.DTOs.PagedBooks> SearchBooks(string sTerm = "", int genreId = 0, int page = 1, int pageSize = 12, CancellationToken ct = default) =>
+            _homeRepository.SearchBooks(sTerm, genreId, page, pageSize, ct);
 
         // Retrieve a list of books based on search term and genre filter
         public async Task<IEnumerable<Book>> GetBooks(string sTerm = "", int genreId = 0)

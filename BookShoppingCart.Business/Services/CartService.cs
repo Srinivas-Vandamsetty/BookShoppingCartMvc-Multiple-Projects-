@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Business.Factories;
+using BookShoppingCart.Business.Factories;
 using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using BookShoppingCart.Models.Models.DTOs;
@@ -22,7 +22,7 @@ namespace BookShoppingCart.Business.Services
             if (bookId <= 0)
                 throw new ArgumentException("Invalid book id.");
 
-            if (qty <= 0)
+            if (qty <= 0 || qty > BookStoreCore.Pricing.CartPricing.MaxQuantity)
                 throw new ArgumentException("Quantity must be greater than zero.");
 
             return await _cartRepo.AddItem(bookId, qty);
@@ -43,7 +43,7 @@ namespace BookShoppingCart.Business.Services
             var cart = await _cartRepo.GetUserCart();
 
             if (cart == null)
-                throw new Exception("Cart not found.");
+                throw new InvalidOperationException("Cart repository returned no cart.");
 
             return cart;
         }
@@ -60,16 +60,12 @@ namespace BookShoppingCart.Business.Services
         // Handles checkout process
         public async Task<bool> DoCheckout(CheckoutModel model)
         {
+            ArgumentNullException.ThrowIfNull(model);
             if (string.IsNullOrWhiteSpace(model.PaymentMethod))
-                throw new Exception("Payment method is required.");
+                throw new ArgumentException("Payment method is required.");
 
-            var paymentService = PaymentFactory.Create(model.PaymentMethod);
-
-            PaymentResult result = await paymentService.ProcessPayment(model.TotalAmount);
-
-            if (!result.IsSuccess) 
-                throw new Exception(result.ErrorMessage ?? "Payment failed.");
-
+            if (!string.Equals(model.PaymentMethod, "cash", StringComparison.OrdinalIgnoreCase))
+                throw new NotSupportedException("Electronic payments are not configured. Please use cash on delivery.");
             return await _cartRepo.DoCheckout(model);
         }
     }

@@ -1,4 +1,4 @@
-﻿@using BookShoppingCart.Models.Models.DTOs
+@using BookShoppingCart.Models.Models.DTOs
 @model BookDTO
 @{
     Layout = "_AdminLayout";
@@ -19,6 +19,7 @@
         <input type="hidden" asp-for="Id" />
         <input type="hidden" asp-for="Image" />
 
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
         <div class="mb-3">
             <label class="form-label fw-bold text-dark">Book Name*</label>
             <input type="text" class="form-control" asp-for="BookName" />
@@ -63,3 +64,5 @@
         </div>
     </form>
 </div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

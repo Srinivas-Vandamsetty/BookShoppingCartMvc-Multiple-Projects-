@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -7,17 +7,17 @@ namespace BookShoppingCart.Models.Models
     [Table("ShoppingCart")]
     public class ShoppingCart
     {
-        public decimal DiscountAmount;
-        public decimal FinalAmount;
+        [NotMapped] public decimal DiscountAmount { get; set; }
+        [NotMapped] public decimal FinalAmount { get; set; }
 
         public int Id { get; set; }
 
         [Required]
-        public string UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
         public bool IsDeleted { get; set; } = false;
 
-        public ICollection<CartDetail> CartDetails { get; set; }
+        public ICollection<CartDetail> CartDetails { get; set; } = [];
 
         [NotMapped]
         public decimal TotalAmount { get; set; }

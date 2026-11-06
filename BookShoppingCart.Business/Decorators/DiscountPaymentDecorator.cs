@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Business.Factories;
+using BookShoppingCart.Business.Factories;
 using BookShoppingCart.Models.Models;
 using System;
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ namespace BookShoppingCart.Business.Decorators
 
         public override async Task<PaymentResult> ProcessPayment(decimal amount)
         {
-            amount -= Discount;
+            amount = Math.Max(0, amount - Discount);
             return await base.ProcessPayment(amount);
         }
     }

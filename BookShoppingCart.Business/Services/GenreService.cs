@@ -1,86 +1,46 @@
-﻿using BookShoppingCart.Data.Repositories;
+using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace BookShoppingCart.Business.Services
+namespace BookShoppingCart.Business.Services;
+public class GenreService(IGenreRepository genres) : IGenreService
 {
-    public class GenreService : IGenreService
+    public Task<IEnumerable<Genre>> GetGenres() => genres.GetAllAsync();
+    public Task<Genre?> GetGenreById(int id)
     {
-        private readonly IGenreRepository _genreRepo;
-
-        public GenreService(IGenreRepository genreRepo)
-        {
-            _genreRepo = genreRepo;
-        }
-
-        public async Task<IEnumerable<Genre>> GetGenres()
-        {
-            return await _genreRepo.GetAllAsync();
-        }
-
-        public async Task<Genre?> GetGenreById(int id)
-        {
-            if (id <= 0)
-                throw new ArgumentException("Invalid genre id.");
-
-            return await _genreRepo.GetByIdAsync(id);
-        }
-
-        public async Task AddGenre(Genre genre)
-        {
-            if (genre == null)
-                throw new ArgumentNullException(nameof(genre));
-
-            if (string.IsNullOrWhiteSpace(genre.GenreName))
-                throw new ArgumentException("Genre name is required.");
-
-            // Optional: prevent duplicate genre names
-            var existingGenres = await _genreRepo.GetAllAsync();
-            if (existingGenres.Any(g =>
-                g.GenreName.ToLower() == genre.GenreName.ToLower()))
-            {
-                throw new InvalidOperationException("Genre already exists.");
-            }
-
-            await _genreRepo.AddAsync(genre);
-        }
-
-        public async Task UpdateGenre(Genre genre)
-        {
-            if (genre == null)
-                throw new ArgumentNullException(nameof(genre));
-
-            if (genre.Id <= 0)
-                throw new ArgumentException("Invalid genre id.");
-
-            if (string.IsNullOrWhiteSpace(genre.GenreName))
-                throw new ArgumentException("Genre name is required.");
-
-            var existingGenre = await _genreRepo.GetByIdAsync(genre.Id);
-            if (existingGenre == null)
-                throw new InvalidOperationException(
-                    $"Genre with ID {genre.Id} not found.");
-
-            existingGenre.GenreName = genre.GenreName;
-
-            await _genreRepo.UpdateAsync(existingGenre);
-        }
-
-        public async Task DeleteGenre(int id)
-        {
-            if (id <= 0)
-                throw new ArgumentException("Invalid genre id.");
-
-            var genre = await _genreRepo.GetByIdAsync(id);
-
-            if (genre == null)
-                throw new InvalidOperationException(
-                    $"Genre with ID {id} not found");
-
-            await _genreRepo.DeleteAsync(genre);
-        }
+        if (id <= 0) throw new ArgumentException("Invalid genre id.");
+        return genres.GetByIdAsync(id);
+    }
+    private async Task<string> Validate(Genre genre)
+    {
+        ArgumentNullException.ThrowIfNull(genre);
+        var name = genre.GenreName?.Trim();
+        if (string.IsNullOrEmpty(name) || name.Length > 40) throw new ArgumentException("Genre name must contain 1–40 characters.");
+        if (await genres.NameExists(name, genre.Id)) throw new InvalidOperationException("Genre already exists.");
+        return name;
+    }
+    public async Task AddGenre(Genre genre)
+    {
+        var name = await Validate(genre);
+        // Construct a scalar entity rather than persisting a request-supplied object graph.
+        var created = new Genre { GenreName = name };
+        await genres.AddAsync(created);
+        genre.Id = created.Id;
+        genre.GenreName = created.GenreName;
+    }
+    public async Task UpdateGenre(Genre genre)
+    {
+        if (genre is null) throw new ArgumentNullException(nameof(genre));
+        if (genre.Id <= 0) throw new ArgumentException("Invalid genre id.");
+        var name = await Validate(genre);
+        var existing = await genres.GetByIdAsync(genre.Id)
+            ?? throw new InvalidOperationException("Genre not found.");
+        existing.GenreName = name;
+        await genres.UpdateAsync(existing);
+    }
+    public async Task DeleteGenre(int id)
+    {
+        if (id <= 0) throw new ArgumentException("Invalid genre id.");
+        var genre = await genres.GetByIdAsync(id) ?? throw new InvalidOperationException("Genre not found.");
+        if (await genres.HasBooks(id)) throw new InvalidOperationException("This genre is linked to existing books and cannot be deleted.");
+        await genres.DeleteAsync(genre);
     }
 }

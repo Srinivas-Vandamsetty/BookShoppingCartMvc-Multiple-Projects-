@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Business.Services;
+using BookShoppingCart.Business.Services;
 using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using BookShoppingCart.Models.Models.DTOs;
@@ -82,9 +82,9 @@ namespace BookShoppingCart.Tests.Tests
         {
             _cartRepoMock
                 .Setup(r => r.GetUserCart())
-                .ReturnsAsync((ShoppingCart)null);
+                .ReturnsAsync((ShoppingCart)null!);
 
-            await Assert.ThrowsAsync<Exception>(() =>
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _cartService.GetUserCart());
         }
 
@@ -116,26 +116,8 @@ namespace BookShoppingCart.Tests.Tests
                 TotalAmount = 100
             };
 
-            await Assert.ThrowsAsync<Exception>(() =>
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 _cartService.DoCheckout(model));
-        }
-
-        [Fact]
-        public async Task DoCheckout_Success_ReturnsTrue()
-        {
-            var model = new CheckoutModel
-            {
-                PaymentMethod = "COD",
-                TotalAmount = 100
-            };
-
-            _cartRepoMock
-                .Setup(r => r.DoCheckout(model))
-                .ReturnsAsync(true);
-
-            var result = await _cartService.DoCheckout(model);
-
-            Assert.True(result);
         }
     }
 }

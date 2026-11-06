@@ -1,4 +1,5 @@
-﻿using BookShoppingCart.Business.Services;
+using FastEndpoints.Swagger;
+using BookShoppingCart.Business.Services;
 using FastEndpoints;
 
 public class DeleteGenreRequest
@@ -18,12 +19,21 @@ public class DeleteGenreEndpoint : Endpoint<DeleteGenreRequest>
     public override void Configure()
     {
         Delete("/api/genre/DeleteGenre/{Id}");
-        AllowAnonymous();
+        Options(o => o.AutoTagOverride("Genres"));
+        Roles("Admin");
     }
 
     public override async Task HandleAsync(DeleteGenreRequest req, CancellationToken ct)
     {
-        await _genreService.DeleteGenre(req.Id);
-        await SendNoContentAsync(ct);
+        try
+        {
+            await _genreService.DeleteGenre(req.Id);
+            await SendNoContentAsync(ct);
+        }
+        catch (InvalidOperationException ex)
+        {
+            AddError(ex.Message);
+            await SendErrorsAsync(400, ct);
+        }
     }
 }

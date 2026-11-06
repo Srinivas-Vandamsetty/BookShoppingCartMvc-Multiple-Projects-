@@ -1,48 +1,13 @@
-﻿using BookShoppingCart.Business.Services;
+using BookShoppingCart.Business.Services;
 using BookShoppingCart.Models.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BookShoppingCart.Business.Proxies
+namespace BookShoppingCart.Business.Proxies;
+// Compatibility decorator: freshness is owned by the read service, not a second cache.
+public class BookServiceProxy(IBookService books) : IBookService
 {
-    public class BookServiceProxy : IBookService
-    {
-        private readonly IBookService _bookService;
-        private IEnumerable<Book> _cachedBooks;
-
-        public BookServiceProxy(IBookService bookService)
-        {
-            _bookService = bookService;
-        }
-
-        public async Task<IEnumerable<Book>> GetBooks()
-        {
-            if (_cachedBooks != null)
-            {
-                Console.WriteLine("Returning books from cache");
-                return _cachedBooks;
-            }
-
-            Console.WriteLine("Fetching books from database");
-
-            _cachedBooks = await _bookService.GetBooks();
-            return _cachedBooks;
-        }
-
-        // Forward other methods directly
-        public async Task<Book> GetBookById(int id)
-            => await _bookService.GetBookById(id);
-
-        public async Task AddBook(Book book)
-            => await _bookService.AddBook(book);
-
-        public async Task UpdateBook(Book book)
-            => await _bookService.UpdateBook(book);
-
-        public async Task DeleteBook(int id)
-            => await _bookService.DeleteBook(id);
-    }
+    public Task<IEnumerable<Book>> GetBooks(int page = 1) => books.GetBooks(page);
+    public Task<Book> GetBookById(int id) => books.GetBookById(id);
+    public Task AddBook(Book book) => books.AddBook(book);
+    public Task UpdateBook(Book book) => books.UpdateBook(book);
+    public Task DeleteBook(int id) => books.DeleteBook(id);
+    public Task DeleteUnusedImage(string image) => books.DeleteUnusedImage(image);
 }

@@ -1,4 +1,5 @@
-﻿using BookShoppingCart.Business.Facades;
+using BookShoppingCartMvcUI.Services;
+using BookShoppingCart.Business.Facades;
 using BookShoppingCart.Business.Services;
 using BookShoppingCart.Models.Models.DTOs;
 using BookStoreCore.Shared;
@@ -16,24 +17,36 @@ namespace BookShoppingCartMvcUI.Controllers
         private readonly IBookFacade _bookFacade;
         private readonly IGenreService _genreService;
         private readonly ILogger<BookController> _logger;
+        private readonly CommerceApiClient _api;
 
         public BookController(
             IBookFacade bookFacade,
             IGenreService genreService,
-            ILogger<BookController> logger)
+            ILogger<BookController> logger, CommerceApiClient api)
         {
             _bookFacade = bookFacade;
             _genreService = genreService;
             _logger = logger;
+            _api = api;
         }
 
-        public async Task<IActionResult> Index()
+        private async Task<BookDTO> PopulateGenres(BookDTO dto)
+        {
+            dto.GenreList = (await _genreService.GetGenres()).Select(g =>
+                new SelectListItem(g.GenreName, g.Id.ToString(), g.Id == dto.GenreId));
+            return dto;
+        }
+
+        public async Task<IActionResult> Index(int page = 1)
         {
             var stopwatch = Stopwatch.StartNew();
 
             _logger.LogInformation("Fetching book list");
 
-            var books = (await _bookFacade.GetBooks()).ToList();
+            var result = await _api.Get<CommercePage<BookResponse>>($"admin/books?page={page}");
+            var books = result.Items;
+            ViewBag.Page = page;
+            ViewBag.HasNext = result.HasNext;
 
             stopwatch.Stop();
 
@@ -42,26 +55,10 @@ namespace BookShoppingCartMvcUI.Controllers
                 books.Count,
                 stopwatch.ElapsedMilliseconds);
 
-            return View(books);
+            return View(books.Select(b => b.ToModel()));
         }
 
-        public async Task<IActionResult> AddBook()
-        {
-            _logger.LogInformation("Loading AddBook page");
-
-            var genres = await _genreService.GetGenres();
-
-            var dto = new BookDTO
-            {
-                GenreList = genres.Select(g => new SelectListItem
-                {
-                    Text = g.GenreName,
-                    Value = g.Id.ToString()
-                })
-            };
-
-            return View(dto);
-        }
+        public async Task<IActionResult> AddBook() => View(await PopulateGenres(new BookDTO()));
 
         [HttpPost]
         public async Task<IActionResult> AddBook(BookDTO dto)
@@ -73,7 +70,7 @@ namespace BookShoppingCartMvcUI.Controllers
                     ModelState.Values.SelectMany(v => v.Errors)
                                      .Select(e => e.ErrorMessage));
 
-                return View(dto);
+                return View(await PopulateGenres(dto));
             }
 
             try
@@ -93,8 +90,9 @@ namespace BookShoppingCartMvcUI.Controllers
                     "Error occurred while adding book: {BookName}",
                     dto.BookName);
 
-                TempData["errorMessage"] = "Something went wrong.";
-                return View(dto);
+                ModelState.AddModelError("", ex is ArgumentException or CommerceApiException or BookWriteUnconfirmedException ? ex.Message : "Unable to save this book. Please check your entries.");
+                TempData["errorMessage"] = "Unable to complete the book operation.";
+                return View(await PopulateGenres(dto));
             }
         }
 
@@ -129,7 +127,7 @@ namespace BookShoppingCartMvcUI.Controllers
                 })
             };
 
-            return View(dto);
+            return View(await PopulateGenres(dto));
         }
 
         [HttpPost]
@@ -141,7 +139,7 @@ namespace BookShoppingCartMvcUI.Controllers
                     "Invalid model state while updating book ID {Id}",
                     dto.Id);
 
-                return View(dto);
+                return View(await PopulateGenres(dto));
             }
 
             try
@@ -161,11 +159,12 @@ namespace BookShoppingCartMvcUI.Controllers
                     "Error occurred while updating book ID {Id}",
                     dto.Id);
 
-                TempData["errorMessage"] = "Something went wrong.";
-                return View(dto);
+                ModelState.AddModelError("", ex is CommerceApiException or BookWriteUnconfirmedException ? ex.Message : "Unable to save this book.");
+                return View(await PopulateGenres(dto));
             }
         }
 
+        [HttpPost]
         public async Task<IActionResult> DeleteBook(int id)
         {
             try
@@ -176,7 +175,7 @@ namespace BookShoppingCartMvcUI.Controllers
                     "Book deleted successfully for ID {Id}",
                     id);
 
-                TempData["successMessage"] = "Book deleted successfully";
+                TempData["successMessage"] = "Book archived successfully.";
             }
             catch (Exception ex)
             {
@@ -193,14 +192,11 @@ namespace BookShoppingCartMvcUI.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> BookDetails(int id)
         {
-            var book = await _bookFacade.GetBookById(id);
-            if (book == null)
-            {
-                return NotFound();
-            }
-            return View(book);
+            try { return View(await _bookFacade.GetBookById(id)); }
+            catch (CommerceApiException ex) when (ex.Status == System.Net.HttpStatusCode.NotFound) { return NotFound(); }
         }
 
+        [HttpPost]
         public async Task<IActionResult> CloneBook(int id)
         {
             try

@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Data.Repositories;
+using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using BookShoppingCart.Models.Models.DTOs;
 using System.Collections.Generic;
@@ -17,9 +17,9 @@ namespace BookShoppingCart.Business.Services
         }
 
         // Get orders based on user or all users depending on the flag
-        public async Task<IEnumerable<Order>> GetUserOrders(bool getAll = false)
+        public async Task<IEnumerable<Order>> GetUserOrders(bool getAll = false, int page = 1)
         {
-            return await _userOrderRepository.UserOrders(getAll);
+            return await _userOrderRepository.UserOrders(getAll, page);
         }
 
         // Change the current status of a specific order

@@ -1,38 +1,30 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
+using System.Data.Common;
+using BookShoppingCartMvcUI.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace BookShoppingCartMvcUI.Areas.Identity.Pages.Account
+namespace BookShoppingCartMvcUI.Areas.Identity.Pages.Account;
+
+public sealed class LogoutModel(BrowserAuthenticationService authentication, SignInManager<IdentityUser> signIn,
+    ILogger<LogoutModel> logger) : PageModel
 {
-    public class LogoutModel : PageModel
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly ILogger<LogoutModel> _logger;
-
-        public LogoutModel(SignInManager<IdentityUser> signInManager, ILogger<LogoutModel> logger)
+        var ticket = await HttpContext.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+        try
         {
-            _signInManager = signInManager;
-            _logger = logger;
+            if (ticket.Properties?.Items.TryGetValue(BrowserAuthenticationService.SessionKey, out var value) == true &&
+                Guid.TryParse(value, out var id))
+                await authentication.RevokeAsync(id, HttpContext.RequestAborted);
         }
-
-        public async Task<IActionResult> OnPost(string returnUrl = null)
+        catch (DbException)
         {
-            await _signInManager.SignOutAsync();
-            _logger.LogInformation("User logged out.");
-            if (returnUrl != null)
-            {
-                return LocalRedirect(returnUrl);
-            }
-            else
-            {
-                // This needs to be a redirect so that the browser performs a new
-                // request and the identity for the user gets updated.
-                return RedirectToPage();
-            }
+            logger.LogError("Logout could not revoke the durable session because the database is unavailable.");
+            TempData["errorMessage"] = "You are signed out of this browser. Session revocation could not be confirmed; please try again when the service is available.";
         }
+        finally { await signIn.SignOutAsync(); }
+        return LocalRedirect(Url.IsLocalUrl(returnUrl) ? returnUrl! : "/");
     }
 }

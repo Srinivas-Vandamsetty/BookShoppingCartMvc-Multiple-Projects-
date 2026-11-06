@@ -1,4 +1,5 @@
-﻿using BookShoppingCart.Business.Services;
+using BookShoppingCart.Business.Services;
+using BookShoppingCartMvcUI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -10,23 +11,28 @@ namespace BookShoppingCartMvcUI.Controllers
     {
         private readonly IStockService _stockService;
         private readonly ILogger<StockController> _logger;
+        private readonly CommerceApiClient _api;
 
         public StockController(
             IStockService stockService,
-            ILogger<StockController> logger)
+            ILogger<StockController> logger, CommerceApiClient api)
         {
             _stockService = stockService;
             _logger = logger;
+            _api = api;
         }
 
         // Show list of stocks
-        public async Task<IActionResult> Index(string sTerm = "")
+        public async Task<IActionResult> Index(string sTerm = "", int page = 1)
         {
             _logger.LogInformation("Fetching stock list. SearchTerm: {SearchTerm}", sTerm);
 
             try
             {
-                var stocks = await _stockService.GetStocks(sTerm);
+                var result = await _api.Get<CommercePage<StockDisplayModel>>(Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString($"admin/inventory?page={page}", "search", sTerm));
+                var stocks = result.Items;
+                ViewBag.Page = page;
+                ViewBag.HasNext = result.HasNext;
 
                 _logger.LogInformation("Fetched {Count} stock records", stocks.Count());
 
@@ -37,7 +43,7 @@ namespace BookShoppingCartMvcUI.Controllers
                 _logger.LogError(ex, "Error occurred while fetching stock list");
 
                 TempData["errorMessage"] = "Failed to load stock data.";
-                return View(new List<StockDTO>());
+                return View(new List<StockDisplayModel>());
             }
         }
 
@@ -53,6 +59,8 @@ namespace BookShoppingCartMvcUI.Controllers
                 var stock = new StockDTO
                 {
                     BookId = bookId,
+                    OperationId = Guid.NewGuid(),
+                    ExpectedQuantity = existingStock?.Quantity ?? 0,
                     Quantity = existingStock != null ? existingStock.Quantity : 0
                 };
 
@@ -71,6 +79,7 @@ namespace BookShoppingCartMvcUI.Controllers
         [HttpPost]
         public async Task<IActionResult> ManangeStock(StockDTO stock)
         {
+            if (string.IsNullOrWhiteSpace(stock.Reason)) ModelState.AddModelError(nameof(stock.Reason), "Enter a reason for this stock adjustment.");
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("Invalid model state while managing stock for BookId: {BookId}", stock.BookId);

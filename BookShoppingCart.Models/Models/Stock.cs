@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookShoppingCart.Models.Models
 {
@@ -9,6 +9,6 @@ namespace BookShoppingCart.Models.Models
         public int BookId { get; set; }
         public int Quantity { get; set; }
 
-        public Book Book { get; set; }
+        public Book Book { get; set; } = null!;
     }
 }

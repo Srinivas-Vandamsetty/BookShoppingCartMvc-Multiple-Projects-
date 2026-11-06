@@ -1,0 +1,76 @@
+x-app-environment: &app-environment
+  ASPNETCORE_ENVIRONMENT: Development
+  ASPNETCORE_URLS: https://+:8443
+  ASPNETCORE_Kestrel__Certificates__Default__Path: /https/bookverse.pfx
+  ASPNETCORE_Kestrel__Certificates__Default__Password: ${BOOKVERSE_CERT_PASSWORD:?Run scripts/Initialize-Docker.ps1 first}
+  ConnectionStrings__DefaultConnection: "Server=sql,1433;Database=BookShoppingCartMvc;User ID=sa;Password=${BOOKVERSE_SQL_PASSWORD:?Run scripts/Initialize-Docker.ps1 first};Encrypt=True;TrustServerCertificate=True;Command Timeout=120"
+
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${BOOKVERSE_SQL_PASSWORD}
+    volumes:
+      - sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -Q 'SELECT 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  initialize:
+    image: bookshoppingcart-ui:local
+    build:
+      context: .
+      dockerfile: BookShoppingCartMvcUI/Dockerfile
+    command: ["--initialize-database"]
+    environment:
+      <<: *app-environment
+    depends_on:
+      sql:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: BookShoppingCart.WebAPI/Dockerfile
+    environment:
+      <<: *app-environment
+      Jwt__SigningKey: ${BOOKVERSE_JWT_KEY:?Run scripts/Initialize-Docker.ps1 first}
+    depends_on:
+      initialize:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:5444:8443"
+    volumes:
+      - ./.docker-local/bookverse.pfx:/https/bookverse.pfx:ro
+      - api-keys:/root/.aspnet/DataProtection-Keys
+
+  mvc:
+    image: bookshoppingcart-ui:local
+    build:
+      context: .
+      dockerfile: BookShoppingCartMvcUI/Dockerfile
+    entrypoint: ["/bin/sh", "-ec", "update-ca-certificates && exec dotnet BookShoppingCartMvcUI.dll \"$$@\"", "--"]
+    environment:
+      <<: *app-environment
+      ApiSettings__BaseUrl: https://api:8443/api/
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:5443:8443"
+    volumes:
+      - ./.docker-local/bookverse.pfx:/https/bookverse.pfx:ro
+      - ./.docker-local/bookverse.crt:/usr/local/share/ca-certificates/bookverse.crt:ro
+      - mvc-keys:/root/.aspnet/DataProtection-Keys
+      - covers:/app/wwwroot/images
+      - email-outbox:/app/.email-outbox
+
+volumes:
+  sql-data:
+  api-keys:
+  mvc-keys:
+  covers:
+  email-outbox:

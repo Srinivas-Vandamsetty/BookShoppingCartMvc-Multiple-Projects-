@@ -1,4 +1,4 @@
-﻿@using BookShoppingCart.Models.Models.DTOs
+@using BookShoppingCart.Models.Models.DTOs
 @model OrderDetailModalDTO
 
 <div class="modal fade" id="modal-@Model.DivId" tabindex="-1" aria-labelledby="modalLabel-@Model.DivId" aria-hidden="true">
@@ -25,8 +25,8 @@
                             @foreach (var item in Model.OrderDetail)
                             {
                                 <tr>
-                                    <td class="fw-semibold">@item.Book.BookName</td>
-                                    <td>@item.Book.Genre.GenreName</td>
+                                    <td class="fw-semibold">@(string.IsNullOrEmpty(item.BookName) ? item.Book.BookName : item.BookName)</td>
+                                    <td>@(string.IsNullOrEmpty(item.GenreName) ? item.Book.Genre.GenreName : item.GenreName)</td>
                                     <td>₹@item.UnitPrice.ToString("0.00")</td>
                                     <td>@item.Quantity</td>
                                     <td class="text-success fw-bold">₹@(item.Quantity * item.UnitPrice)</td>

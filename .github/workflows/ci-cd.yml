@@ -1,39 +1,101 @@
-name: CI-CD Pipeline
+name: CI and image publishing
 
 on:
+  pull_request:
+    branches: [master]
   push:
-    branches:
-      - master
+    branches: [master]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+  validate:
+    name: Build and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: 'BookVerse-CI-Only!42'
+        ports:
+          - 1433/tcp
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'BookVerse-CI-Only!42' -C -b -Q 'SELECT 1' || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '9.0.x'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Restore and build
+        run: |
+          dotnet restore BookShoppingCartMvc.sln
+          dotnet build BookShoppingCartMvc.sln -c Release --no-restore
+      - name: Run .NET tests including SQL Server integration
+        env:
+          BOOKSTORE_TEST_SQL: Server=127.0.0.1,${{ job.services.sqlserver.ports['1433'] }};User ID=sa;Password=BookVerse-CI-Only!42;Encrypt=True;TrustServerCertificate=True
+        run: dotnet test BookShoppingCart.Tests/BookShoppingCart.Tests.csproj -c Release --no-build --no-restore --results-directory TestResults --logger "trx;LogFileName=dotnet.trx"
+      - name: Run JavaScript tests
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p TestResults
+          node --test --test-reporter=tap BookShoppingCart.Tests/Frontend/*.test.cjs | tee TestResults/frontend.tap
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: test-results
+          path: TestResults/
 
-    - name: Set up .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x'
-
-    - name: Restore dependencies
-      run: dotnet restore BookShoppingCartMvc.sln
-
-    - name: Build solution
-      run: dotnet build BookShoppingCartMvc.sln --configuration Release --no-restore
-
-    - name: Login to Docker Hub
-      run: |
-        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
-        -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-    - name: Build Docker image (MVC UI)
-      run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/bookshoppingcart-ui:latest \
-        -f BookShoppingCartMvcUI/Dockerfile .
-
-    - name: Push Docker image
-      run: |
-        docker push ${{ secrets.DOCKER_USERNAME }}/bookshoppingcart-ui:latest
+  images:
+    name: Build container images
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Build MVC and API images
+        run: |
+          docker build --label "org.opencontainers.image.revision=$GITHUB_SHA" -t "bookshoppingcart-ui:$GITHUB_SHA" -f BookShoppingCartMvcUI/Dockerfile .
+          docker build --label "org.opencontainers.image.revision=$GITHUB_SHA" -t "bookshoppingcart-api:$GITHUB_SHA" -f BookShoppingCart.WebAPI/Dockerfile .
+      - name: Publish tested revision to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          : "${DOCKER_USERNAME:?Configure DOCKER_USERNAME}"
+          : "${DOCKER_TOKEN:?Configure DOCKER_PASSWORD with a Docker Hub access token}"
+          printf '%s' "$DOCKER_TOKEN" | docker login --username "$DOCKER_USERNAME" --password-stdin
+          trap 'docker logout' EXIT
+          for image in bookshoppingcart-ui bookshoppingcart-api; do
+            tag="$DOCKER_USERNAME/$image:$GITHUB_SHA"
+            docker tag "$image:$GITHUB_SHA" "$tag"
+            docker push "$tag"
+            docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$tag" | tee -a image-digests.txt
+          done
+      - name: Upload published image digests
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: image-digests
+          path: image-digests.txt
+          if-no-files-found: error
