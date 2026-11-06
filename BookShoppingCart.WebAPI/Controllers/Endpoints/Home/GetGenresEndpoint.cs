@@ -1,4 +1,5 @@
-﻿using BookShoppingCart.Business.Services;
+using FastEndpoints.Swagger;
+using BookShoppingCart.Business.Services;
 using FastEndpoints;
 
 public class GetGenresEndpoint : EndpointWithoutRequest
@@ -13,6 +14,7 @@ public class GetGenresEndpoint : EndpointWithoutRequest
     public override void Configure()
     {
         Get("/api/home/GetGenres");
+        Options(o => o.AutoTagOverride("Genres"));
         AllowAnonymous();
     }
 
@@ -20,7 +22,7 @@ public class GetGenresEndpoint : EndpointWithoutRequest
     {
         var genres = await _homeService.GetGenres();
         if (genres is not null)
-            await SendOkAsync(genres, ct);
+            await SendOkAsync(genres.Select(g => new BookShoppingCart.Models.Models.DTOs.GenreDTO { Id = g.Id, GenreName = g.GenreName }), ct);
         else
             await SendNotFoundAsync(ct);
     }

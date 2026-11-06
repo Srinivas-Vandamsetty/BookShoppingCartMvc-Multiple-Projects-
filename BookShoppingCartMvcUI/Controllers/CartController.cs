@@ -1,198 +1,130 @@
-﻿using BookShoppingCart.Business.Services;
-using BookShoppingCart.Business.Strategies;
+using BookShoppingCartMvcUI.Services;
+using BookShoppingCart.Business.Services;
 using BookShoppingCart.Models.Models;
+using BookStoreCore.Pricing;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
-namespace BookShoppingCartMvcUI.Controllers
+namespace BookShoppingCartMvcUI.Controllers;
+[Authorize]
+public class CartController(ICartService cartService, ICommerceCartGateway checkout) : Controller
 {
-    [Authorize]
-    public class CartController : Controller
+    public async Task<IActionResult> GetUserCart(string? coupon = null)
     {
-        private readonly ICartService _cartService;
-        private readonly IDiscountService _discountService;
-        private readonly IShippingStrategy _shippingStrategy;
-        private readonly ILogger<CartController> _logger;
-
-        public CartController(
-            ICartService cartService,
-            IDiscountService discountService,
-            IShippingStrategy shippingStrategy,
-            ILogger<CartController> logger)
+        var cart = await cartService.GetUserCart();
+        CartQuote quote;
+        try { quote = CartPricing.Quote(cart.CartDetails.Sum(d => d.Book.Price * d.Quantity), coupon, cart.CartDetails.Count > 0); }
+        catch (ArgumentException ex)
         {
-            _cartService = cartService;
-            _discountService = discountService;
-            _shippingStrategy = shippingStrategy;
-            _logger = logger;
+            TempData["errorMessage"] = ex.Message;
+            coupon = null;
+            quote = CartPricing.Quote(cart.CartDetails.Sum(d => d.Book.Price * d.Quantity), null, cart.CartDetails.Count > 0);
         }
-
-        public async Task<IActionResult> GetUserCart(string? coupon = null)
+        ViewBag.CouponCode = coupon;
+        ViewBag.ItemTotal = quote.Subtotal;
+        ViewBag.DiscountRate = CartPricing.DiscountRate(coupon);
+        ViewBag.DiscountAmount = quote.Discount;
+        ViewBag.ShippingCharge = quote.Shipping;
+        ViewBag.FinalTotal = quote.Total;
+        return View(cart);
+    }
+    [HttpPost]
+    public async Task<IActionResult> AddItem(int bookId, int qty = 1, int redirect = 0, string? coupon = null)
+    {
+        try
         {
-            _logger.LogInformation("Loading user cart. Coupon: {Coupon}", coupon);
-
-            try
-            {
-                var cart = await _cartService.GetUserCart()
-                           ?? new ShoppingCart { CartDetails = new List<CartDetail>() };
-
-                decimal itemTotal = (decimal)cart.CartDetails
-                    .Sum(cd => cd.Book.Price * cd.Quantity);
-
-                decimal discountAmount =
-                    _discountService.CalculateDiscountAmount(itemTotal, coupon);
-
-                decimal discountedTotal = itemTotal - discountAmount;
-
-                decimal shippingCharge =
-                    _shippingStrategy.CalculateShipping(discountedTotal);
-
-                decimal finalTotal = discountedTotal + shippingCharge;
-
-                _logger.LogInformation(
-                    "Cart Calculated. ItemTotal: {ItemTotal}, Discount: {Discount}, Shipping: {Shipping}, FinalTotal: {FinalTotal}",
-                    itemTotal, discountAmount, shippingCharge, finalTotal);
-
-                ViewBag.CouponCode = coupon;
-                ViewBag.ItemTotal = itemTotal;
-                ViewBag.DiscountRate = _discountService.GetDiscountRate(coupon);
-                ViewBag.DiscountAmount = discountAmount;
-                ViewBag.ShippingCharge = shippingCharge;
-                ViewBag.FinalTotal = finalTotal;
-
-                return View(cart);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while loading user cart");
-                TempData["errorMessage"] = "Failed to load cart.";
-                return View(new ShoppingCart { CartDetails = new List<CartDetail>() });
-            }
+            var count = await cartService.AddItem(bookId, qty);
+            return redirect == 0 ? Ok(count) : RedirectToAction(nameof(GetUserCart), new { coupon });
         }
-
-        public async Task<IActionResult> AddItem(int bookId, int qty = 1, int redirect = 0)
+        catch (CommerceApiException ex)
         {
-            _logger.LogInformation("Adding item to cart. BookId: {BookId}, Quantity: {Quantity}", bookId, qty);
-
-            try
-            {
-                var cartCount = await _cartService.AddItem(bookId, qty);
-
-                _logger.LogInformation("Item added successfully. Updated Cart Count: {CartCount}", cartCount);
-
-                if (redirect == 0)
-                    return Ok(cartCount);
-
-                return RedirectToAction(nameof(GetUserCart));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error adding item to cart. BookId: {BookId}", bookId);
-                return BadRequest("Unable to add item.");
-            }
+            if (redirect == 0) return StatusCode((int)ex.Status, new { message = ex.Message });
+            TempData["errorMessage"] = ex.Message;
+            return RedirectToAction(nameof(GetUserCart), new { coupon });
         }
-
-        public async Task<IActionResult> RemoveItem(int bookId)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or KeyNotFoundException)
         {
-            _logger.LogInformation("Removing item from cart. BookId: {BookId}", bookId);
-
-            try
-            {
-                await _cartService.RemoveItem(bookId);
-                _logger.LogInformation("Item removed successfully. BookId: {BookId}", bookId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error removing item from cart. BookId: {BookId}", bookId);
-                TempData["errorMessage"] = "Unable to remove item.";
-            }
-
-            return RedirectToAction(nameof(GetUserCart));
-        }
-
-        public async Task<IActionResult> GetTotalItemInCart()
-        {
-            _logger.LogInformation("Fetching total cart item count");
-
-            try
-            {
-                int cartItem = await _cartService.GetCartItemCount();
-                return Ok(cartItem);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching cart item count");
-                return Ok(0);
-            }
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetCartItemIds()
-        {
-            _logger.LogInformation("Fetching cart item IDs");
-
-            try
-            {
-                var cart = await _cartService.GetUserCart();
-                var bookIds = cart?.CartDetails?.Select(cd => cd.BookId).ToList()
-                              ?? new List<int>();
-
-                return Json(bookIds);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching cart item IDs");
-                return Json(new List<int>());
-            }
-        }
-
-        public IActionResult Checkout()
-        {
-            _logger.LogInformation("Loading Checkout page");
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Checkout(CheckoutModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Checkout model state invalid");
-                return View(model);
-            }
-
-            _logger.LogInformation("Processing checkout for user {User}", User.Identity?.Name);
-
-            try
-            {
-                bool isCheckedOut = await _cartService.DoCheckout(model);
-
-                if (!isCheckedOut)
-                {
-                    _logger.LogWarning("Checkout failed for user {User}", User.Identity?.Name);
-                    return RedirectToAction(nameof(OrderFailure));
-                }
-
-                _logger.LogInformation("Checkout successful for user {User}", User.Identity?.Name);
-                return RedirectToAction(nameof(OrderSuccess));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred during checkout");
-                return RedirectToAction(nameof(OrderFailure));
-            }
-        }
-
-        public IActionResult OrderSuccess()
-        {
-            _logger.LogInformation("Order success page loaded");
-            return View();
-        }
-
-        public IActionResult OrderFailure()
-        {
-            _logger.LogWarning("Order failure page loaded");
-            return View();
+            if (redirect == 0) return BadRequest(new { message = ex.Message });
+            TempData["errorMessage"] = ex.Message;
+            return RedirectToAction(nameof(GetUserCart), new { coupon });
         }
     }
+    [HttpPost]
+    public async Task<IActionResult> RemoveItem(int bookId, string? coupon = null)
+    {
+        try { await cartService.RemoveItem(bookId); }
+        catch (CommerceApiException ex) { TempData["errorMessage"] = ex.Message; }
+        return RedirectToAction(nameof(GetUserCart), new { coupon });
+    }
+    public async Task<IActionResult> GetTotalItemInCart() => Ok(await cartService.GetCartItemCount());
+    public async Task<IActionResult> GetCartItemIds() =>
+        Json((await cartService.GetUserCart()).CartDetails.Select(d => d.BookId).ToList());
+
+    [HttpPost]
+    public async Task<IActionResult> SetQuantity(int bookId, int quantity, string? coupon = null)
+    {
+        try { await checkout.SetQuantity(bookId, quantity); }
+        catch (CommerceApiException ex) { TempData["errorMessage"] = ex.Message; }
+        return RedirectToAction(nameof(GetUserCart), new { coupon });
+    }
+    [HttpPost]
+    public async Task<IActionResult> RemoveLine(int bookId, string? coupon = null)
+    {
+        try { await checkout.RemoveLine(bookId); }
+        catch (CommerceApiException ex) { TempData["errorMessage"] = ex.Message; }
+        return RedirectToAction(nameof(GetUserCart), new { coupon });
+    }
+
+    private async Task PrepareQuote(CheckoutModel model)
+    {
+        var quote = await checkout.Quote(model.CouponCode);
+        ViewBag.PaymentMethods = await checkout.PaymentMethods();
+        model.CheckoutKey = quote.CheckoutKey;
+        model.QuoteToken = quote.QuoteToken;
+        model.TotalAmount = quote.Total;
+        ModelState.Remove(nameof(model.QuoteToken));
+        ModelState.Remove(nameof(model.CheckoutKey));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Checkout(string? coupon = null)
+    {
+        var model = new CheckoutModel { CouponCode = coupon, PaymentMethod = "cash" };
+        try { await PrepareQuote(model); return View(model); }
+        catch (CommerceApiException ex)
+        {
+            TempData["errorMessage"] = ex.Message;
+            return RedirectToAction(nameof(GetUserCart), new { coupon });
+        }
+    }
+    [HttpPost]
+    public async Task<IActionResult> Checkout(CheckoutModel model)
+    {
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                var placed = await checkout.Checkout(model);
+                return RedirectToAction(nameof(OrderSuccess), new { orderId = placed.OrderId });
+            }
+            catch (CommerceApiException ex) when ((int)ex.Status >= 500 || (int)ex.Status == 429)
+            {
+                // A network failure can occur after commit. Preserve the original attempt key.
+                ViewBag.Unconfirmed = true;
+                ViewBag.PaymentMethods = new List<PaymentMethodResponse> { new("cash", "Cash on delivery") };
+                ModelState.AddModelError("", "We could not confirm the order. Retry this same checkout or check your order history.");
+                return View(model);
+            }
+            catch (CommerceApiException ex) { ModelState.AddModelError("", ex.Message); }
+        }
+        try { await PrepareQuote(model); return View(model); }
+        catch (CommerceApiException ex)
+        {
+            TempData["errorMessage"] = ex.Message;
+            return RedirectToAction(nameof(GetUserCart), new { coupon = model.CouponCode });
+        }
+    }
+    public IActionResult OrderSuccess(int? orderId = null)
+    { ViewBag.OrderId = orderId; return View(); }
+    public IActionResult OrderFailure() => View();
 }

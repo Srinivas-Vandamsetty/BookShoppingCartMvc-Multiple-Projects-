@@ -1,8 +1,7 @@
-﻿using BookShoppingCart.Business.Services;
+using BookShoppingCart.Business.Services;
 using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using BookStoreCore.Shared;
-using Microsoft.Extensions.Caching.Memory;
 using Moq;
 
 namespace BookShoppingCart.Tests.Tests
@@ -11,7 +10,6 @@ namespace BookShoppingCart.Tests.Tests
     {
         private readonly Mock<IBookRepository> _bookRepoMock;
         private readonly Mock<IFileService> _fileServiceMock;
-        private readonly IMemoryCache _memoryCache;
 
         private readonly BookService _bookService;
 
@@ -19,16 +17,14 @@ namespace BookShoppingCart.Tests.Tests
         {
             _bookRepoMock = new Mock<IBookRepository>();
             _fileServiceMock = new Mock<IFileService>();
-            _memoryCache = new MemoryCache(new MemoryCacheOptions());
 
             _bookService = new BookService(
                 _bookRepoMock.Object,
-                _fileServiceMock.Object,
-                _memoryCache);
+                _fileServiceMock.Object);
         }
 
         [Fact]
-        public async Task GetBooks_CacheMiss_ReturnsBooksAndCaches()
+        public async Task GetBooks_ReturnsFreshBooksAcrossReads()
         {
             // Arrange
             var books = new List<Book>
@@ -37,7 +33,7 @@ namespace BookShoppingCart.Tests.Tests
             };
 
             _bookRepoMock
-                .Setup(r => r.GetBooksWithGenres())
+                .Setup(r => r.GetBooksWithGenres(1, 50))
                 .ReturnsAsync(books);
 
             // Act
@@ -46,11 +42,11 @@ namespace BookShoppingCart.Tests.Tests
             // Assert
             Assert.Single(result);
 
-            // Call again to verify cache hit
-            var cachedResult = await _bookService.GetBooks();
-            Assert.Single(cachedResult);
+            // A second read must refresh database state across API-host genre changes.
+            var refreshedResult = await _bookService.GetBooks();
+            Assert.Single(refreshedResult);
 
-            _bookRepoMock.Verify(r => r.GetBooksWithGenres(), Times.Once);
+            _bookRepoMock.Verify(r => r.GetBooksWithGenres(1, 50), Times.Exactly(2));
         }
 
         [Fact]
@@ -65,14 +61,14 @@ namespace BookShoppingCart.Tests.Tests
         {
             _bookRepoMock
                 .Setup(r => r.GetByIdAsync(It.IsAny<int>()))
-                .ReturnsAsync((Book)null);
+                .ReturnsAsync((Book)null!);
 
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _bookService.GetBookById(1));
         }
 
         [Fact]
-        public async Task AddBook_ValidBook_AddsAndClearsCache()
+        public async Task AddBook_ValidBook_PersistsValidatedBook()
         {
             // Arrange
             var book = new Book
@@ -94,7 +90,7 @@ namespace BookShoppingCart.Tests.Tests
         public async Task AddBook_NullBook_ThrowsException()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                _bookService.AddBook(null));
+                _bookService.AddBook(null!));
         }
 
         [Fact]
@@ -127,14 +123,14 @@ namespace BookShoppingCart.Tests.Tests
 
             _bookRepoMock
                 .Setup(r => r.GetByIdAsync(book.Id))
-                .ReturnsAsync((Book)null);
+                .ReturnsAsync((Book)null!);
 
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _bookService.UpdateBook(book));
         }
 
         [Fact]
-        public async Task DeleteBook_ValidId_DeletesBookAndFile()
+        public async Task DeleteBook_ValidId_ArchivesBookAndRetainsHistoryAndImage()
         {
             // Arrange
             var book = new Book
@@ -155,8 +151,9 @@ namespace BookShoppingCart.Tests.Tests
             await _bookService.DeleteBook(1);
 
             // Assert
-            _bookRepoMock.Verify(r => r.DeleteAsync(book), Times.Once);
-            _fileServiceMock.Verify(f => f.DeleteFile("test.jpg"), Times.Once);
+            _bookRepoMock.Verify(r => r.UpdateAsync(It.Is<Book>(b => b.IsArchived)), Times.Once);
+            _bookRepoMock.Verify(r => r.DeleteAsync(It.IsAny<Book>()), Times.Never);
+            _fileServiceMock.Verify(f => f.DeleteFile(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -171,7 +168,7 @@ namespace BookShoppingCart.Tests.Tests
         {
             _bookRepoMock
                 .Setup(r => r.GetByIdAsync(It.IsAny<int>()))
-                .ReturnsAsync((Book)null);
+                .ReturnsAsync((Book)null!);
 
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _bookService.DeleteBook(1));

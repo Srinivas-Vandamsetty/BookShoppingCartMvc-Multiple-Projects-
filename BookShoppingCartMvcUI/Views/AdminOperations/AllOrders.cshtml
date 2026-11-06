@@ -1,4 +1,4 @@
-﻿@using BookShoppingCart.Models.Models
+@using BookShoppingCart.Models.Models
 @model IEnumerable<Order>
 
 @{
@@ -9,6 +9,11 @@
 <div class="container mt-4">
     <h2 class="text--bs-gray-dark fw-bold mb-4">📋 All Orders</h2>
 
+    <form method="get" class="row g-2 mb-4" aria-label="Filter orders">
+        <div class="col-sm"><label for="order-search" class="form-label">Search orders</label><input id="order-search" class="form-control" name="search" value="@ViewBag.Search" placeholder="Order number, name or email" maxlength="80" /></div>
+        <div class="col-sm"><label for="order-status" class="form-label">Status</label><input id="order-status" class="form-control" name="status" value="@ViewBag.StatusFilter" placeholder="e.g. Pending" maxlength="30" /></div>
+        <div class="col-sm-auto align-self-end"><button class="btn btn-primary" type="submit">Filter</button></div>
+    </form>
     @if (Model != null && Model.Any())
     {
         @foreach (var order in Model)
@@ -16,7 +21,7 @@
             <div class="card mb-4 shadow-sm">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
                     <div>
-                        <strong>Order Date:</strong> @order.CreateDate.ToString("dd-MM-yyyy")<br />
+                        <strong>Order Date:</strong> @order.CreateDate.ToString("dd-MM-yyyy") <span class="ms-2">Total: ₹@order.Total.ToString("0.00")</span><br />
 
                         @{
                             var status = order.OrderStatus.StatusName.ToLower();
@@ -78,10 +83,19 @@
                             <i class="bi bi-arrow-repeat"></i> Change Order Status
                         </a>
 
-                        <a asp-action="TogglePaymentStatus" asp-route-orderId="@order.Id"
-                           class="btn btn-outline-warning fw-bold text-dark">
-                            <i class="bi bi-cash-coin"></i> Toggle Payment Status
-                        </a>
+                        @if (order.PaymentMethod == "cash" && order.OrderStatus.StatusName != "Cancelled")
+                        {
+                            <form asp-action="RecordCashCollection" method="post" class="d-flex flex-wrap gap-2">
+                                <input type="hidden" name="orderId" value="@order.Id" />
+                                <input type="hidden" name="OperationId" value="@Guid.NewGuid()" />
+                                <input type="hidden" name="Collected" value="@((!order.IsPaid).ToString())" />
+                                <input type="hidden" name="ExpectedCollected" value="@order.IsPaid.ToString()" />
+                                <input name="Reason" class="form-control form-control-sm w-auto" aria-label="Reason for cash collection change" placeholder="Reason or receipt reference" maxlength="300" required />
+                                <button type="submit" class="btn btn-outline-warning fw-bold text-dark">
+                                    @(order.IsPaid ? "Correct cash collection" : "Record cash collection")
+                                </button>
+                            </form>
+                        }
                     </div>
 
                     @* Modal partial *@
@@ -100,3 +114,5 @@
         <div class="alert alert-warning">No orders found.</div>
     }
 </div>
+
+<partial name="_OrderPaging" />

@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "OrderSuccess";
 }
 
@@ -8,6 +8,10 @@
             <img src="~/images/OrderSuccessImage.png" class="img-fluid mb-4" alt="Order Success" style="max-width: 400px;" />
             <h1 class="display-4 text-success fw-bold">Order was successful!</h1>
             <p class="lead mt-3">Thank you for your purchase. Your order has been placed successfully.</p>
+            @if (ViewBag.OrderId is int orderId)
+            {
+                <a asp-controller="UserOrder" asp-action="Details" asp-route-id="@orderId" class="btn btn-outline-success btn-lg mt-4">View order #@orderId</a>
+            }
             <a href="/" class="btn btn-primary btn-lg mt-4 px-4 py-2">
                 <i class="bi bi-shop me-2"></i> Continue Shopping
             </a>

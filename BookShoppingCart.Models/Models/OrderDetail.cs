@@ -1,4 +1,4 @@
-﻿using Microsoft.Build.Framework;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookShoppingCart.Models.Models
@@ -7,6 +7,9 @@ namespace BookShoppingCart.Models.Models
     public class OrderDetail
     {
         public int Id { get; set; }
+        [MaxLength(40)] public string BookName { get; set; } = string.Empty;
+        [MaxLength(40)] public string AuthorName { get; set; } = string.Empty;
+        [MaxLength(40)] public string GenreName { get; set; } = string.Empty;
         [Required]
         public int OrderId { get; set; }
         [Required]
@@ -14,8 +17,8 @@ namespace BookShoppingCart.Models.Models
         [Required]
         public int Quantity { get; set; }
         [Required]
-        public double UnitPrice { get; set; }
-        public Order Order { get; set; }
-        public Book Book { get; set; }
+        public decimal UnitPrice { get; set; }
+        public Order Order { get; set; } = null!;
+        public Book Book { get; set; } = null!;
     }
 }

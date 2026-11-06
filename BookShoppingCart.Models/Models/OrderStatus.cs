@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookShoppingCart.Models.Models
@@ -10,6 +10,6 @@ namespace BookShoppingCart.Models.Models
             [Required]
             public int StatusId { get; set; }
             [Required, MaxLength(20)]
-            public string StatusName { get; set; }
+            public string StatusName { get; set; } = string.Empty;
         }
 }

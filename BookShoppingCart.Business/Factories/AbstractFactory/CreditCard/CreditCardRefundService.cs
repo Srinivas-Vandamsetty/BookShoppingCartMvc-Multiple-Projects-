@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Business.Factories.AbstractFactory.Interfaces;
+using BookShoppingCart.Business.Factories.AbstractFactory.Interfaces;
 using BookShoppingCart.Models.Models;
 using System;
 using System.Collections.Generic;
@@ -10,10 +10,7 @@ namespace BookShoppingCart.Business.Factories.AbstractFactory.CreditCard
 {
     public class CreditCardRefundService : IRefundService
     {
-        public async Task<bool> Refund(string transactionId)
-        {
-            await Task.Delay(300);
-            return true;
-        }
+        public Task<bool> Refund(string transactionId) =>
+            throw new NotSupportedException("A verified refund provider is not configured.");
     }
 }

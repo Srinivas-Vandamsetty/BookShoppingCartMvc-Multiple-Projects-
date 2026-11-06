@@ -1,4 +1,4 @@
-﻿@using BookShoppingCart.Models.Models.DTOs
+@using BookShoppingCart.Models.Models.DTOs
 @model CheckoutModel
 @{
     ViewData["Title"] = "Checkout";
@@ -13,7 +13,12 @@
                 </div>
                 <div class="card-body p-5">
 
-                    <form asp-action="Checkout">
+                    <form asp-action="Checkout" method="post">
+<div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+<input type="hidden" asp-for="CheckoutKey" />
+<input type="hidden" asp-for="QuoteToken" />
+<input type="hidden" asp-for="CouponCode" />
+<p class="fw-bold">Total including discount and delivery: ₹@(ViewBag.Unconfirmed == true ? "—" : Model.TotalAmount.ToString("0.00"))</p>
 
                         <div class="mb-3">
                             <label asp-for="Name" class="form-label fw-semibold">Name*</label>
@@ -51,15 +56,16 @@
                             <span asp-validation-for="Address" class="text-danger small"></span>
                         </div>
 
+                        <p>Card and UPI payments are currently unavailable. Payment is collected on delivery.</p>
                         <div class="mb-4">
                             <label asp-for="PaymentMethod" class="form-label fw-semibold">Payment Method*</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-credit-card-fill"></i></span>
                                 <select asp-for="PaymentMethod" class="form-select form-select-lg">
                                     <option value="">Select Payment Method</option>
-                                    @foreach (var method in Enum.GetValues(typeof(BookShoppingCartMvcUI.Constants.PaymentMethods)))
+                                    @foreach (var method in (IEnumerable<PaymentMethodResponse>)ViewBag.PaymentMethods)
                                     {
-                                        <option value="@method.ToString()">@method.ToString()</option>
+                                        <option value="@method.Code">@method.Name</option>
                                     }
                                 </select>
                             </div>
@@ -79,3 +85,5 @@
         </div>
     </div>
 </div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

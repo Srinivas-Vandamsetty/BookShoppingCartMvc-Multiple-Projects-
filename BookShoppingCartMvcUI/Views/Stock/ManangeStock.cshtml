@@ -1,4 +1,4 @@
-﻿@model StockDTO
+@model StockDTO
 @{
     Layout = "_AdminLayout";
 }
@@ -13,6 +13,9 @@
 
     <form asp-action="ManangeStock" class="shadow-lg p-4 bg-white rounded-4" style="box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);">
         <input type="hidden" asp-for="BookId" />
+        <input type="hidden" asp-for="ExpectedQuantity" />
+        <input type="hidden" asp-for="OperationId" />
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
         <div class="mb-3">
             <label class="form-label fw-bold text-dark">Quantity*</label>
@@ -20,6 +23,11 @@
             <span asp-validation-for="Quantity" class="text-danger small"></span>
         </div>
 
+        <div class="mb-3">
+            <label asp-for="Reason" class="form-label fw-bold">Adjustment reason</label>
+            <textarea asp-for="Reason" class="form-control" maxlength="300" required></textarea>
+            <span asp-validation-for="Reason" class="text-danger small"></span>
+        </div>
         <div class="mt-4">
             <button type="submit" class="btn btn-warning w-100">
                 <i class="bi bi-arrow-repeat"></i> Update Stock
@@ -27,3 +35,5 @@
         </div>
     </form>
 </div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

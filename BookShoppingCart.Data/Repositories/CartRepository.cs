@@ -1,248 +1,189 @@
-﻿using BookShoppingCart.Data.Data;
+using System.Data;
+using System.ComponentModel.DataAnnotations;
+using BookShoppingCart.Data.Data;
 using BookShoppingCart.Models.Models;
 using BookShoppingCart.Models.Models.DTOs;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+using BookStoreCore.Pricing;
+using BookStoreCore.Security;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace BookShoppingCart.Data.Repositories
+namespace BookShoppingCart.Data.Repositories;
+
+public class CartRepository(ApplicationDbContext db, ICurrentUser currentUser) : ICartRepository
 {
-    // Handles database operations related to the shopping cart.
-    public class CartRepository : ICartRepository
+    // Serialize mutations for one user's cart across processes, without locking other users.
+    // Stock availability is enforced separately with atomic conditional updates.
+    private async Task LockCart(string userId)
     {
-        private readonly ApplicationDbContext _db;
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-
-        // Constructor to initialize database context and user management services.
-        public CartRepository(ApplicationDbContext db, IHttpContextAccessor httpContextAccessor, UserManager<IdentityUser> userManager)
+        if (db.Database.IsSqlServer())
         {
-            _db = db;
-            _userManager = userManager;
-            _httpContextAccessor = httpContextAccessor;
+            var resource = "cart:" + userId;
+            await db.Database.ExecuteSqlInterpolatedAsync($@"
+DECLARE @result int;
+EXEC @result = sys.sp_getapplock @Resource={resource}, @LockMode='Exclusive',
+    @LockOwner='Transaction', @LockTimeout=10000;
+IF @result < 0 THROW 51000, 'Cart is busy. Please retry.', 1;");
         }
+    }
 
-        // Adds a book to the cart or increases its quantity if it already exists.
-        public async Task<int> AddItem(int bookId, int qty)
+    public async Task<int> AddItem(int bookId, int qty)
+    {
+        if (bookId <= 0 || qty is < 1 or > CartPricing.MaxQuantity)
+            throw new ArgumentException("Invalid book or quantity (maximum 1000).");
+        var userId = currentUser.UserId;
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await LockCart(userId);
+        var book = await db.Books.AsNoTracking().SingleOrDefaultAsync(b => b.Id == bookId && !b.IsArchived)
+            ?? throw new KeyNotFoundException("Book not found.");
+        var available = await db.Stocks.Where(s => s.BookId == bookId).Select(s => s.Quantity).SingleOrDefaultAsync();
+        var cart = await GetCart(userId);
+        if (cart is null)
         {
-            string userId = GetUserId();
-            if (string.IsNullOrEmpty(userId))
-                throw new UnauthorizedAccessException("User is not logged in");
+            cart = new ShoppingCart { UserId = userId };
+            db.ShoppingCarts.Add(cart);
+        }
+        var line = cart.CartDetails.SingleOrDefault(d => d.BookId == bookId);
+        var quantity = checked((line?.Quantity ?? 0) + qty);
+        if (quantity > CartPricing.MaxQuantity || quantity > available)
+            throw new InvalidOperationException("Requested quantity is not available.");
+        if (line is null && cart.CartDetails.Count >= 100) throw new InvalidOperationException("A cart can contain at most 100 different books.");
+        if (line is null)
+            cart.CartDetails.Add(new CartDetail { BookId = bookId, Quantity = quantity, UnitPrice = book.Price });
+        else
+        {
+            line.Quantity = quantity;
+            line.UnitPrice = book.Price;
+        }
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+        return await GetCartItemCount();
+    }
 
-            using var transaction = await _db.Database.BeginTransactionAsync();
-            try
+    public async Task<int> SetQuantity(int bookId, int quantity)
+    {
+        if (bookId <= 0 || quantity is < 0 or > CartPricing.MaxQuantity) throw new ArgumentException("Invalid quantity.");
+        var owner = currentUser.UserId;
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await LockCart(owner);
+        var cart = await GetCart(owner);
+        var line = cart?.CartDetails.SingleOrDefault(d => d.BookId == bookId);
+        if (line is null && quantity > 0) throw new KeyNotFoundException("Cart item not found.");
+        if (line is not null)
+        {
+            if (quantity == 0) db.CartDetails.Remove(line);
+            else
             {
-                var cart = await GetCart(userId);
-                if (cart == null)
-                {
-                    cart = new ShoppingCart { UserId = userId };
-                    _db.ShoppingCarts.Add(cart);
-                    await _db.SaveChangesAsync();
-                }
-
-                var cartItem = await _db.CartDetails.FirstOrDefaultAsync(a => a.ShoppingCartId == cart.Id && a.BookId == bookId);
-                if (cartItem != null)
-                {
-                    cartItem.Quantity += qty;
-                }
-                else
-                {
-                    var book = await _db.Books.FindAsync(bookId);
-                    if (book == null)
-                        throw new InvalidOperationException("Book not found");
-
-                    cartItem = new CartDetail
-                    {
-                        BookId = bookId,
-                        ShoppingCartId = cart.Id,
-                        Quantity = qty,
-                        UnitPrice = book.Price
-                    };
-                    _db.CartDetails.Add(cartItem);
-                }
-
-                await _db.SaveChangesAsync();
-                await transaction.CommitAsync();
+                var book = await db.Books.AsNoTracking().SingleOrDefaultAsync(b => b.Id == bookId && !b.IsArchived)
+                    ?? throw new KeyNotFoundException("Book not found.");
+                var available = await db.Stocks.Where(s => s.BookId == bookId).Select(s => s.Quantity).SingleOrDefaultAsync();
+                if (quantity > available) throw new InvalidOperationException("Requested quantity is not available.");
+                line.Quantity = quantity; line.UnitPrice = book.Price;
             }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-
-            return await GetCartItemCount(userId);
+            await db.SaveChangesAsync();
         }
+        await tx.CommitAsync();
+        return await GetCartItemCount();
+    }
 
-        // Removes a book from the cart or decreases its quantity.
-        public async Task<int> RemoveItem(int bookId)
+    public async Task<int> RemoveItem(int bookId)
+    {
+        if (bookId <= 0) throw new ArgumentException("Invalid book.");
+        var userId = currentUser.UserId;
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await LockCart(userId);
+        var cart = await GetCart(userId);
+        var line = cart?.CartDetails.SingleOrDefault(d => d.BookId == bookId);
+        if (line is not null)
         {
-            string userId = GetUserId();
-            if (string.IsNullOrEmpty(userId))
-                throw new UnauthorizedAccessException("User is not logged in");
-
-            using var transaction = await _db.Database.BeginTransactionAsync();
-            try
-            {
-                var cart = await GetCart(userId);
-                if (cart == null)
-                    throw new InvalidOperationException("Cart not found");
-
-                var cartItem = await _db.CartDetails.FirstOrDefaultAsync(a => a.ShoppingCartId == cart.Id && a.BookId == bookId);
-                if (cartItem == null)
-                    throw new InvalidOperationException("Item not found in cart");
-
-                if (cartItem.Quantity == 1)
-                    _db.CartDetails.Remove(cartItem);
-                else
-                    cartItem.Quantity--;
-
-                await _db.SaveChangesAsync();
-                await transaction.CommitAsync();
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-
-            return await GetCartItemCount(userId);
+            if (line.Quantity <= 1) db.CartDetails.Remove(line);
+            else line.Quantity--;
+            await db.SaveChangesAsync();
         }
+        await tx.CommitAsync();
+        return await GetCartItemCount();
+    }
 
-        // Retrieves the shopping cart for the currently logged-in user.
-        public async Task<ShoppingCart> GetUserCart()
+    public async Task<ShoppingCart> GetUserCart()
+    {
+        var userId = currentUser.UserId;
+        return await db.ShoppingCarts.AsNoTracking()
+            .Include(c => c.CartDetails).ThenInclude(d => d.Book).ThenInclude(b => b.Stock)
+            .Include(c => c.CartDetails).ThenInclude(d => d.Book).ThenInclude(b => b.Genre)
+            .AsSplitQuery().SingleOrDefaultAsync(c => c.UserId == userId)
+            ?? new ShoppingCart { UserId = userId };
+    }
+
+    public Task<ShoppingCart?> GetCart(string userId)
+    {
+        if (userId != currentUser.UserId) throw new UnauthorizedAccessException();
+        return db.ShoppingCarts.Include(c => c.CartDetails).SingleOrDefaultAsync(c => c.UserId == userId);
+    }
+
+    public async Task<int> GetCartItemCount(string userId = "")
+    {
+        var owner = currentUser.UserId;
+        if (!string.IsNullOrEmpty(userId) && userId != owner) throw new UnauthorizedAccessException();
+        return await db.CartDetails.Where(d => d.ShoppingCart.UserId == owner).SumAsync(d => (int?)d.Quantity) ?? 0;
+    }
+
+    public async Task<bool> DoCheckout(CheckoutModel model)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        Validator.ValidateObject(model, new ValidationContext(model), true);
+        if (!string.Equals(model.PaymentMethod, "cash", StringComparison.OrdinalIgnoreCase))
+            throw new NotSupportedException("Electronic payments are unavailable until a verified payment provider is configured.");
+        if (model.CheckoutKey == Guid.Empty) throw new ArgumentException("Checkout key is required.");
+        var userId = currentUser.UserId;
+        await using var tx = await db.Database.BeginTransactionAsync();
+        await LockCart(userId);
+        // A replay returns the existing committed outcome even after the cart has been emptied.
+        if (await db.Orders.AnyAsync(o => o.UserId == userId && o.CheckoutKey == model.CheckoutKey))
         {
-            var userId = GetUserId();
-            if (string.IsNullOrEmpty(userId))
-                throw new UnauthorizedAccessException("Invalid user ID");
-
-            var cart = await _db.ShoppingCarts
-                .Include(a => a.CartDetails)
-                    .ThenInclude(a => a.Book)
-                        .ThenInclude(a => a.Stock)
-                .Include(a => a.CartDetails)
-                    .ThenInclude(a => a.Book)
-                        .ThenInclude(a => a.Genre)
-                .FirstOrDefaultAsync(a => a.UserId == userId);
-
-            return cart ?? new ShoppingCart { CartDetails = new List<CartDetail>() };
+            await tx.CommitAsync();
+            return true;
         }
-
-        // Retrieves the cart for a specific user.
-        public async Task<ShoppingCart> GetCart(string userId)
+        var cart = await GetCart(userId);
+        if (cart is null || cart.CartDetails.Count == 0)
+            throw new InvalidOperationException("Your cart is empty.");
+        var lines = cart.CartDetails.OrderBy(d => d.BookId).ToList();
+        if (lines.Count > 100) throw new InvalidOperationException("A cart can contain at most 100 different books.");
+        if (lines.Any(d => d.Quantity is < 1 or > CartPricing.MaxQuantity))
+            throw new InvalidOperationException("Invalid cart quantity.");
+        var ids = lines.Select(d => d.BookId).ToArray();
+        var books = await db.Books.AsNoTracking().Include(b => b.Genre)
+            .Where(b => ids.Contains(b.Id) && !b.IsArchived).ToDictionaryAsync(b => b.Id);
+        if (books.Count != lines.Count) throw new InvalidOperationException("A book in your cart is no longer available.");
+        if (model.ExpectedCartFingerprint is not null &&
+            model.ExpectedCartFingerprint != CartPricing.Fingerprint(lines.Select(d =>
+                (d.BookId, d.Quantity, books[d.BookId].Price))))
+            throw new InvalidOperationException("Cart prices changed. Please review the updated total.");
+        var quote = CartPricing.Quote(lines.Sum(d => books[d.BookId].Price * d.Quantity), model.CouponCode);
+        var pending = await db.OrderStatuses.SingleOrDefaultAsync(s => s.StatusName == "Pending")
+            ?? throw new InvalidOperationException("Order statuses are not initialized.");
+        var order = new Order
         {
-            var cart = await _db.ShoppingCarts
-                .Include(a => a.CartDetails)
-                .FirstOrDefaultAsync(x => x.UserId == userId);
-
-            return cart ?? new ShoppingCart { UserId = userId, CartDetails = new List<CartDetail>() };
-        }
-
-        // Gets the total number of items in the shopping cart.
-        public async Task<int> GetCartItemCount(string userId = "")
+            UserId = userId, CheckoutKey = model.CheckoutKey, Name = model.Name.Trim(),
+            Email = model.Email.Trim(), MobileNumber = model.MobileNumber.Trim(), Address = model.Address.Trim(),
+            PaymentMethod = "cash", IsPaid = false, OrderStatusId = pending.Id,
+            Subtotal = quote.Subtotal, Discount = quote.Discount, Shipping = quote.Shipping,
+            Total = quote.Total, CouponCode = model.CouponCode?.Trim().ToUpperInvariant()
+        };
+        foreach (var line in lines)
         {
-            userId = string.IsNullOrEmpty(userId) ? GetUserId() : userId;
-            if (string.IsNullOrEmpty(userId)) return 0;
-
-            return await _db.CartDetails
-                .Where(cd => cd.ShoppingCart.UserId == userId)
-                .SumAsync(cd => cd.Quantity);
-        }
-
-        public async Task<bool> DoCheckout(CheckoutModel model)
-        {
-            // Begin a transaction to group all operations safely – if one fails, everything is rolled back
-            using var transaction = await _db.Database.BeginTransactionAsync();
-            try
+            var changed = await db.Stocks.Where(s => s.BookId == line.BookId && s.Quantity >= line.Quantity)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(s => s.Quantity, s => s.Quantity - line.Quantity));
+            if (changed != 1) throw new InvalidOperationException("Stock changed. Please review your cart.");
+            var book = books[line.BookId];
+            order.OrderDetail.Add(new OrderDetail
             {
-                // Get the currently logged-in user's ID
-                var userId = GetUserId();
-                if (string.IsNullOrEmpty(userId))
-                    throw new UnauthorizedAccessException("User is not logged-in");
-
-                // Retrieve the user's shopping cart
-                var cart = await GetCart(userId);
-                if (cart == null)
-                    throw new InvalidOperationException("Invalid cart");
-
-                // Fetch all cart items
-                var cartDetails = await _db.CartDetails
-                                           .Where(a => a.ShoppingCartId == cart.Id)
-                                           .ToListAsync();
-                if (cartDetails.Count == 0)
-                    throw new InvalidOperationException("Cart is empty");
-
-                // Get the order status with "Pending" status
-                var pendingStatus = await _db.OrderStatuses
-                                             .FirstOrDefaultAsync(s => s.StatusName == "Pending");
-                if (pendingStatus == null)
-                    throw new InvalidOperationException("Order status 'Pending' not found");
-
-                // Create a new order entry
-                var order = new Order
-                {
-                    UserId = userId,
-                    CreateDate = DateTime.UtcNow,
-                    Name = model.Name,
-                    Email = model.Email,
-                    MobileNumber = model.MobileNumber,
-                    PaymentMethod = model.PaymentMethod,
-                    Address = model.Address,
-                    IsPaid = false,
-                    OrderStatusId = pendingStatus.Id
-                };
-                _db.Orders.Add(order);
-                await _db.SaveChangesAsync();
-
-                // Add order details and update stock
-                foreach (var item in cartDetails)
-                {
-                    // Create order detail record for each cart item
-                    var orderDetail = new OrderDetail
-                    {
-                        BookId = item.BookId,
-                        OrderId = order.Id,
-                        Quantity = item.Quantity,
-                        UnitPrice = item.UnitPrice
-                    };
-                    _db.OrderDetails.Add(orderDetail);
-
-                    // Fetch current stock for the book
-                    var stock = await _db.Stocks.FirstOrDefaultAsync(s => s.BookId == item.BookId);
-                    if (stock == null)
-                        throw new InvalidOperationException("Stock is null");
-
-                    // Check for stock availability
-                    if (item.Quantity > stock.Quantity)
-                        throw new InvalidOperationException($"Only {stock.Quantity} item(s) are available in stock");
-
-                    // Deduct ordered quantity from stock
-                    stock.Quantity -= item.Quantity;
-                }
-
-                // Remove cart details after successful order placement
-                _db.CartDetails.RemoveRange(cartDetails);
-
-                // Save all changes to database
-                await _db.SaveChangesAsync();
-
-                // Commit the transaction
-                await transaction.CommitAsync();
-
-                return true;
-            }
-            catch (Exception)
-            {
-                // Rollback if any error occurs
-                await transaction.RollbackAsync();
-                return false;
-            }
+                BookId = book.Id, Quantity = line.Quantity, UnitPrice = book.Price,
+                BookName = book.BookName, AuthorName = book.AuthorName, GenreName = book.Genre.GenreName
+            });
         }
-
-        // Gets the currently logged-in user's ID.
-        private string GetUserId() => _userManager.GetUserId(_httpContextAccessor.HttpContext.User);
+        db.Orders.Add(order);
+        db.CartDetails.RemoveRange(lines);
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+        return true;
     }
 }

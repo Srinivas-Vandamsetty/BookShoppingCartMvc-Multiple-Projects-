@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace BookShoppingCart.Models.Models.DTOs
 {
@@ -8,6 +8,6 @@ namespace BookShoppingCart.Models.Models.DTOs
 
         [Required]
         [MaxLength(40)]
-        public string GenreName { get; set; }
+        public string GenreName { get; set; } = string.Empty;
     }
 }

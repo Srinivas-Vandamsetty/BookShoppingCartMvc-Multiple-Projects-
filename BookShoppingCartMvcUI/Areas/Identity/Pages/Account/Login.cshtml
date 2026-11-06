@@ -1,57 +1,59 @@
-﻿@page
+@page
 @model LoginModel
 @{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Sign in to BookVerse";
 }
-
-<!-- Fullscreen background image container -->
-<div class="min-vh-100 d-flex justify-content-center align-items-center"
-     style="background-image: url('@Url.Content("~/images/BookImage.jpg")'); background-size: cover; background-position: center;">
-    <div class="card p-4 shadow-lg border-0 w-100" style="max-width: 400px; background-color: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 20px;">
-        <h3 class="text-white text-center fw-bold mb-4">USER LOGIN</h3>
-
-        <form method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger text-center mb-3"></div>
-
-            <!-- Email Input -->
-            <div class="input-group mb-4 rounded-pill shadow-sm">
-                <span class="input-group-text bg-white border-0 rounded-start-pill">
-                    <i class="bi bi-person-fill text-primary"></i>
-                </span>
-                <input asp-for="Input.Email" class="form-control border-0 rounded-end-pill" placeholder="Username" />
-            </div>
-            <span asp-validation-for="Input.Email" class="text-danger"></span>
-
-            <!-- Password Input -->
-            <div class="input-group mb-4 rounded-pill shadow-sm">
-                <input asp-for="Input.Password" type="password" class="form-control border-0 rounded-start-pill" placeholder="Password" />
-                <span class="input-group-text bg-white border-0 rounded-end-pill">
-                    <i class="bi bi-lock-fill text-primary"></i>
-                </span>
-            </div>
-            <span asp-validation-for="Input.Password" class="text-danger"></span>
-
-            <!-- Submit Button -->
-            <div class="d-flex justify-content-center">
-                <button type="submit" class="btn btn-light fw-bold w-50 rounded-pill py-2">LOGIN</button>
-            </div>
-
-            <!-- Links -->
-            <div class="text-center mt-3">
-                <a asp-page="./" class="text-info d-block">Forgot password?</a>
-                <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="text-info">Register as a new user</a>
-            </div>
-        </form>
+<link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+<section class="bv-login" aria-labelledby="login-title">
+    <div class="bv-login-card">
+        <aside class="bv-login-story" aria-label="Welcome to BookVerse">
+            <span class="bv-login-eyebrow">YOUR NEXT CHAPTER STARTS HERE</span>
+            <h1>A world of stories.<br />One place to call yours.</h1>
+            <p>Pick up where you left off. Discover your next favorite book, revisit your cart, and make room for a little inspiration.</p>
+            <div class="bv-login-story-note"><span aria-hidden="true">&#10022;</span> Good books. Great possibilities.</div>
+        </aside>
+        <div class="bv-login-form-panel">
+            <div class="bv-login-brand"><span aria-hidden="true">&#128214;</span> Book<span>Verse</span></div>
+            <p class="bv-login-kicker">WELCOME BACK</p>
+            <h2 id="login-title">Sign in to your story</h2>
+            <p class="bv-login-subtitle">Your bookshelf is waiting for you.</p>
+            @if (Model.SessionExpired)
+            {
+                <p class="bv-login-notice" role="status">Your session has expired or could not be renewed. Please sign in again.</p>
+            }
+            else if (Model.ReturnUrl != null)
+            {
+                <p class="bv-login-notice" role="status">Sign in to continue to your requested page.</p>
+            }
+            <form method="post" asp-route-returnUrl="@Model.ReturnUrl" id="bookverse-login">
+                <div asp-validation-summary="ModelOnly" class="bv-login-errors" role="alert" aria-live="polite"></div>
+                <div class="bv-login-field">
+                    <label asp-for="Input.Email">Email address</label>
+                    <input asp-for="Input.Email" type="email" autocomplete="username" inputmode="email"
+                           placeholder="you@example.com" aria-describedby="email-error" autofocus />
+                    <span asp-validation-for="Input.Email" id="email-error" class="bv-login-field-error"></span>
+                </div>
+                <div class="bv-login-field">
+                    <label asp-for="Input.Password">Password</label>
+                    <div class="bv-login-password">
+                        <input asp-for="Input.Password" autocomplete="current-password" placeholder="Enter your password" aria-describedby="password-error" />
+                        <button type="button" id="toggle-password" aria-label="Show password" aria-controls="Input_Password" aria-pressed="false" hidden>Show</button>
+                    </div>
+                    <span asp-validation-for="Input.Password" id="password-error" class="bv-login-field-error"></span>
+                </div>
+                <div class="bv-login-options">
+                    <label class="bv-login-remember"><input asp-for="Input.RememberMe" /> Keep me signed in</label>
+                    <a asp-page="./ForgotPassword">Forgot password?</a>
+                </div>
+                <button type="submit" class="bv-login-submit" id="login-submit"><span id="login-button-text">Sign in</span><span aria-hidden="true">&#8594;</span></button>
+                <p class="bv-login-progress" id="login-progress" role="status" aria-live="polite"></p>
+            </form>
+            <p class="bv-login-register">New to BookVerse? <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Create an account</a></p>
+            <p class="bv-login-security"><span aria-hidden="true">&#128274;</span> A secure space for your next great read.</p>
+        </div>
     </div>
-</div>
-
+</section>
 @section Scripts {
-    <!-- jQuery (MUST be loaded first) -->
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-
-    <!-- jQuery Validation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
-
-    <!-- jQuery Validation Unobtrusive -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/login.js" asp-append-version="true"></script>
 }

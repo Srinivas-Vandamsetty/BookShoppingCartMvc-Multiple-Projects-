@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Data.Data;
+using BookShoppingCart.Data.Data;
 using BookShoppingCart.Models.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -11,10 +11,12 @@ namespace BookShoppingCart.Data.Repositories
     {
         public BookRepository(ApplicationDbContext context) : base(context) { }
 
+        public Task<bool> IsImageReferenced(string image) => _context.Books.AnyAsync(b => b.Image == image);
+
         // Retrieves books along with their associated genres
-        public async Task<IEnumerable<Book>> GetBooksWithGenres()
+        public async Task<IEnumerable<Book>> GetBooksWithGenres(int page = 1, int pageSize = 50)
         {
-            return await _context.Books.Include(b => b.Genre).ToListAsync();
+            return await _context.Books.AsNoTracking().Where(b => !b.IsArchived).Include(b => b.Genre).OrderBy(b => b.Id).Skip((page - 1) * pageSize).Take(pageSize + 1).ToListAsync();
         }
     }
 }

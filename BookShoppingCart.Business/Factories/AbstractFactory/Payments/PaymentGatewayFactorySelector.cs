@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Business.Factories.AbstractFactory.CreditCard;
+using BookShoppingCart.Business.Factories.AbstractFactory.CreditCard;
 using BookShoppingCart.Business.Factories.AbstractFactory.Interfaces;
 using BookShoppingCart.Business.Factories.AbstractFactory.Upi;
 using System;
@@ -13,7 +13,7 @@ namespace BookShoppingCart.Business.Factories.AbstractFactory.Payments
     {
         public static IPaymentGatewayFactory GetFactory(string method)
         {
-            return method.ToLower() switch
+            return method?.Trim().ToLowerInvariant() switch
             {
                 "creditcard" => new CreditCardFactory(),
                 "upi" => new UpiFactory(),

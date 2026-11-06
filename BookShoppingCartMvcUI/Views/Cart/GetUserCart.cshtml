@@ -1,4 +1,4 @@
-﻿@using BookShoppingCart.Models.Models
+@using BookShoppingCart.Models.Models
 @model ShoppingCart
 
 @{
@@ -46,11 +46,21 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center align-items-center">
-                                            <a class="btn btn-outline-secondary btn-sm" href="/cart/removeitem?bookid=@item.BookId">−</a>
-                                            <span class="px-2">@item.Quantity</span>
-                                            @if (item.Quantity < item.Book.Stock.Quantity)
+                                            <form asp-action="RemoveItem" method="post" class="d-inline">
+<input type="hidden" name="bookId" value="@item.BookId" /><input type="hidden" name="coupon" value="@couponCode" />
+<button class="btn btn-outline-secondary btn-sm" type="submit">−</button></form>
+                                            <form asp-action="SetQuantity" method="post" class="d-flex align-items-center gap-1 mx-2">
+                                                <input type="hidden" name="bookId" value="@item.BookId" />
+                                                <input type="hidden" name="coupon" value="@couponCode" />
+                                                <input type="number" name="quantity" min="1" max="1000" value="@item.Quantity"
+                                                       aria-label="Quantity for @item.Book.BookName" class="form-control form-control-sm" style="width: 75px" required />
+                                                <button type="submit" class="btn btn-sm btn-outline-primary">Set</button>
+                                            </form>
+                                            @if (!item.Book.IsArchived && item.Quantity < (item.Book.Stock?.Quantity ?? 0))
                                             {
-                                                <a class="btn btn-outline-secondary btn-sm" href="/Cart/AddItem?bookId=@item.BookId&redirect=1">+</a>
+                                                <form asp-action="AddItem" method="post" class="d-inline">
+<input type="hidden" name="bookId" value="@item.BookId" /><input type="hidden" name="redirect" value="1" />
+<input type="hidden" name="coupon" value="@couponCode" /><button type="submit" class="btn btn-outline-secondary btn-sm">+</button></form>
                                             }
                                             else
                                             {
@@ -60,6 +70,13 @@
                                     </td>
                                     <td class="text-end">₹@item.Book.Price.ToString("0.00")</td>
                                     <td class="text-end">₹@((item.Book.Price * item.Quantity).ToString("0.00"))</td>
+                                    <td>
+                                        <form asp-action="RemoveLine" method="post">
+                                            <input type="hidden" name="bookId" value="@item.BookId" />
+                                            <input type="hidden" name="coupon" value="@couponCode" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                        </form>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -85,7 +102,7 @@
                                 <option value="">-- Select Coupon --</option>
                                 <option value="SAVE10" selected="@(couponCode?.ToUpper() == "SAVE10" ? "selected" : null)">SAVE10 (10% off)</option>
                                 <option value="SAVE20" selected="@(couponCode?.ToUpper() == "SAVE20" ? "selected" : null)">SAVE20 (20% off)</option>
-                                <option value="FLAT50" selected="@(couponCode?.ToUpper() == "FLAT50" ? "selected" : null)">FLAT50 (50% off)</option>
+                                <option value="FLAT40" selected="@(couponCode?.ToUpper() == "FLAT40" ? "selected" : null)">FLAT40 (40% off)</option>
                             </select>
                             <button type="submit" class="btn btn-outline-secondary">Apply</button>
                         </div>
@@ -123,7 +140,7 @@
                         <strong>₹@finalTotal.ToString("0.00")</strong>
                     </div>
 
-                    <a href="/Cart/Checkout" class="btn btn-primary w-100">Checkout</a>
+                    <a asp-action="Checkout" asp-route-coupon="@couponCode" class="btn btn-primary w-100">Checkout</a>
                 </div>
             </div>
         </div>

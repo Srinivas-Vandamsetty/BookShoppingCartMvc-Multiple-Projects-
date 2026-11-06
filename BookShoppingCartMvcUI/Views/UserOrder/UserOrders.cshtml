@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Order>
+@model IEnumerable<Order>
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -13,7 +13,7 @@
             <div class="card mb-4 shadow-sm">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <div>
-                        <strong>Order Date:</strong> @order.CreateDate.ToString("dd-MM-yyyy")
+                        <a asp-action="Details" asp-route-id="@order.Id" class="me-2">Order #@order.Id</a><strong>Order Date:</strong> @order.CreateDate.ToString("dd-MM-yyyy") <span class="ms-2">Total: ₹@order.Total.ToString("0.00")</span>
                     </div>
                     <div>
                         @{
@@ -51,20 +51,20 @@
                                 @foreach (var item in order.OrderDetail)
                                 {
                                     <tr>
-                                        <td>@item.Book.BookName</td>
+                                        <td>@(string.IsNullOrEmpty(item.BookName) ? item.Book.BookName : item.BookName)</td>
                                         <td>
                                             <img src="@((string.IsNullOrEmpty(item.Book.Image)) ? "/images/NoImage.png" : $"/images/{item.Book.Image}")" class="img-thumbnail" style="width: 80px; height: 100px;" />
                                         </td>
-                                        <td>@item.Book.Genre.GenreName</td>
-                                        <td>@item.Book.Price</td>
+                                        <td>@(string.IsNullOrEmpty(item.GenreName) ? item.Book.Genre.GenreName : item.GenreName)</td>
+                                        <td>@item.UnitPrice</td>
                                         <td>@item.Quantity</td>
-                                        <td>@((item.Book.Price * item.Quantity).ToString("0.00"))</td>
+                                        <td>@((item.UnitPrice * item.Quantity).ToString("0.00"))</td>
                                     </tr>
                                 }
                                 <tr>
                                     <td colspan="5" class="text-end fw-bold">Total:</td>
                                     <td class="fw-bold text-success">
-                                        ₹@(order.OrderDetail.Select(item => item.Book.Price * item.Quantity).Sum().ToString("0.00"))
+                                        ₹@(order.OrderDetail.Select(item => item.UnitPrice * item.Quantity).Sum().ToString("0.00"))
                                     </td>
                                 </tr>
                             </tbody>
@@ -86,3 +86,5 @@
         </div>
     }
 </div>
+
+<partial name="_OrderPaging" />

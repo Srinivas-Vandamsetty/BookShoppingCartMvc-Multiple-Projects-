@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +10,7 @@ namespace BookShoppingCart.Business.Factories
     {
         public static IPaymentService Create(string paymentMethod)
         {
-            return paymentMethod.ToLower() switch
+            return paymentMethod?.Trim().ToLowerInvariant() switch
             {
                 "cash" => new CashPaymentService(),
                 "creditcard" => new CreditCardPaymentService(),

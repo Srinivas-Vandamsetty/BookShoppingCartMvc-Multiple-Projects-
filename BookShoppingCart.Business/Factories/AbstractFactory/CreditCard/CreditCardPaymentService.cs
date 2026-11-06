@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Business.Factories.AbstractFactory.Interfaces;
+using BookShoppingCart.Business.Factories.AbstractFactory.Interfaces;
 using BookShoppingCart.Models.Models;
 using System;
 using System.Collections.Generic;
@@ -10,16 +10,7 @@ namespace BookShoppingCart.Business.Factories.AbstractFactory.CreditCard
 {
     public class CreditCardPaymentService : IPaymentsService
     {
-        public async Task<PaymentResult> ProcessPayment(decimal amount)
-        {
-            await Task.Delay(500);
-
-            return new PaymentResult
-            {
-                IsSuccess = true,
-                TransactionId = Guid.NewGuid().ToString(),
-                Message = "Credit card payment processed successfully"
-            };
-        }
+        public Task<PaymentResult> ProcessPayment(decimal amount) =>
+            throw new NotSupportedException("A verified electronic payment provider is not configured.");
     }
 }

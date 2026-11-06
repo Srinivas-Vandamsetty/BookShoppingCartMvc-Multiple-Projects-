@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Business.Services;
+using BookShoppingCart.Business.Services;
 using BookShoppingCart.Data.Repositories;
 using BookShoppingCart.Models.Models;
 using Moq;
@@ -54,14 +54,14 @@ namespace BookShoppingCart.Tests.Tests
 
             var result = await _genreService.GetGenreById(1);
 
-            Assert.Equal("Fiction", result.GenreName);
+            Assert.Equal("Fiction", result!.GenreName);
         }
 
         [Fact]
         public async Task AddGenre_NullGenre_ThrowsException()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                _genreService.AddGenre(null));
+                _genreService.AddGenre(null!));
         }
 
         [Fact]
@@ -81,9 +81,7 @@ namespace BookShoppingCart.Tests.Tests
                 new Genre { GenreName = "Fiction" }
             };
 
-            _genreRepoMock
-                .Setup(r => r.GetAllAsync())
-                .ReturnsAsync(existingGenres);
+            _genreRepoMock.Setup(r => r.NameExists("fiction", 0)).ReturnsAsync(true);
 
             var newGenre = new Genre { GenreName = "fiction" };
 
@@ -102,14 +100,14 @@ namespace BookShoppingCart.Tests.Tests
 
             await _genreService.AddGenre(genre);
 
-            _genreRepoMock.Verify(r => r.AddAsync(genre), Times.Once);
+            _genreRepoMock.Verify(r => r.AddAsync(It.Is<Genre>(g => g.GenreName == genre.GenreName && g.Books.Count == 0)), Times.Once);
         }
 
         [Fact]
         public async Task UpdateGenre_Null_ThrowsException()
         {
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                _genreService.UpdateGenre(null));
+                _genreService.UpdateGenre(null!));
         }
 
         [Fact]
@@ -128,7 +126,7 @@ namespace BookShoppingCart.Tests.Tests
 
             _genreRepoMock
                 .Setup(r => r.GetByIdAsync(1))
-                .ReturnsAsync((Genre)null);
+                .ReturnsAsync((Genre)null!);
 
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _genreService.UpdateGenre(genre));
@@ -163,7 +161,7 @@ namespace BookShoppingCart.Tests.Tests
         {
             _genreRepoMock
                 .Setup(r => r.GetByIdAsync(It.IsAny<int>()))
-                .ReturnsAsync((Genre)null);
+                .ReturnsAsync((Genre)null!);
 
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _genreService.DeleteGenre(1));
@@ -181,6 +179,15 @@ namespace BookShoppingCart.Tests.Tests
             await _genreService.DeleteGenre(1);
 
             _genreRepoMock.Verify(r => r.DeleteAsync(genre), Times.Once);
+        }
+
+        [Fact]
+        public async Task RenameToDuplicate_IsRejectedBeforePersistence()
+        {
+            _genreRepoMock.Setup(r=>r.NameExists("Existing", 2)).ReturnsAsync(true);
+            await Assert.ThrowsAsync<InvalidOperationException>(()=>
+                _genreService.UpdateGenre(new Genre { Id=2, GenreName=" Existing " }));
+            _genreRepoMock.Verify(r=>r.UpdateAsync(It.IsAny<Genre>()), Times.Never);
         }
     }
 }

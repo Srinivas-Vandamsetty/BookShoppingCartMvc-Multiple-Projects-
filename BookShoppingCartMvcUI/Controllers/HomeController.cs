@@ -1,78 +1,54 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Net.Http.Json;
-
-namespace BookShoppingCartMvcUI.Controllers
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Globalization;
+namespace BookShoppingCartMvcUI.Controllers;
+public class HomeController(IHttpClientFactory clients, ILogger<HomeController> logger) : Controller
 {
-    public class HomeController : Controller
+    public async Task<IActionResult> Index(string sTerm = "", int genreId = 0, string? page = null, CancellationToken ct = default)
     {
-        private readonly HttpClient _httpClient;
-        private readonly string _baseUrl;
-        private readonly ILogger<HomeController> _logger;
-
-        // Constructor
-        public HomeController(
-            HttpClient httpClient,
-            IConfiguration configuration,
-            ILogger<HomeController> logger)
+        if (!int.TryParse(page, out var pageNumber) || pageNumber < 1 || pageNumber > 100000) pageNumber = 1;
+        if (sTerm.Length > 100 || genreId < 0) return BadRequest("Invalid search.");
+        var model = new BookDisplayModel { STerm = sTerm, GenreId = genreId, Page = pageNumber };
+        try
         {
-            _httpClient = httpClient;
-            _logger = logger;
-
-            _baseUrl = configuration["ApiSettings:BaseUrl"]
-                       ?? throw new ArgumentNullException(nameof(_baseUrl), "API base URL is not configured.");
+            var client = clients.CreateClient("Catalog");
+            var url = QueryHelpers.AddQueryString("Home/GetBooksPage", new Dictionary<string, string?>
+            {
+                ["sTerm"] = sTerm, ["genreId"] = genreId.ToString(CultureInfo.InvariantCulture),
+                ["page"] = pageNumber.ToString(CultureInfo.InvariantCulture), ["pageSize"] = "12"
+            });
+            var booksTask = client.GetFromJsonAsync<PagedBooks>(url, ct);
+            var genresTask = client.GetFromJsonAsync<List<GenreDTO>>("Home/GetGenres", ct);
+            await Task.WhenAll(booksTask, genresTask);
+            var result = await booksTask ?? new PagedBooks();
+            model.Books = result.Items.Select(b => new Book
+            {
+                Id = b.Id, BookName = b.BookName, AuthorName = b.AuthorName, Price = b.Price,
+                GenreId = b.GenreId, GenreName = b.GenreName, Image = b.Image, Quantity = b.Quantity
+            }).ToList();
+            model.Genres = (await genresTask ?? []).Select(g => new Genre { Id = g.Id, GenreName = g.GenreName }).ToList();
+            model.TotalCount = result.TotalCount;
+            model.Page = result.Page;
         }
-
-        // Home Page
-        public async Task<IActionResult> Index(string sTerm = "", int genreId = 0)
+        catch (BookShoppingCartMvcUI.Services.AuthenticationApiException)
         {
-            _logger.LogInformation(
-                "Loading Home page. SearchTerm: {SearchTerm}, GenreId: {GenreId}",
-                sTerm, genreId);
-
-            try
-            {
-                // Fetch books
-                var books = await _httpClient.GetFromJsonAsync<IEnumerable<Book>>(
-                    $"{_baseUrl}Home/GetBooks?sTerm={sTerm}&genreId={genreId}")
-                    ?? Enumerable.Empty<Book>();
-
-                _logger.LogInformation("Fetched {BookCount} books", books.Count());
-
-                // Fetch genres
-                var genres = await _httpClient.GetFromJsonAsync<IEnumerable<Genre>>(
-                    $"{_baseUrl}Home/GetGenres")
-                    ?? Enumerable.Empty<Genre>();
-
-                _logger.LogInformation("Fetched {GenreCount} genres", genres.Count());
-
-                // Prepare model
-                var bookModel = new BookDisplayModel
-                {
-                    Books = books,
-                    Genres = genres,
-                    STerm = sTerm,
-                    GenreId = genreId
-                };
-
-                return View(bookModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "Error occurred while loading Home page. SearchTerm: {SearchTerm}, GenreId: {GenreId}",
-                    sTerm, genreId);
-
-                TempData["errorMessage"] = "Failed to load books. Please try again later.";
-
-                return View(new BookDisplayModel
-                {
-                    Books = Enumerable.Empty<Book>(),
-                    Genres = Enumerable.Empty<Genre>(),
-                    STerm = sTerm,
-                    GenreId = genreId
-                });
-            }
+            return RedirectToPage("/Account/Login", new { area = "Identity", returnUrl = "/Home/Index" });
         }
+        catch (HttpRequestException ex)
+        {
+            logger.LogWarning(ex, "Catalog API request failed");
+            TempData["errorMessage"] = ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests ?
+                "The catalog is busy. Please try again shortly." : "Unable to load books. Please try again.";
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            logger.LogError(ex, "Invalid catalog API response");
+            TempData["errorMessage"] = "The catalog response was invalid. Please retry.";
+        }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        {
+            TempData["errorMessage"] = "The catalog request timed out. Please retry.";
+        }
+        return View(model);
     }
 }

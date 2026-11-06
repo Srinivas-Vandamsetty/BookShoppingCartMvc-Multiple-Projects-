@@ -1,8 +1,10 @@
-﻿using BookShoppingCart.Business.Services;
+using FastEndpoints.Swagger;
+using BookShoppingCart.Business.Services;
 using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models.DTOs;
 using FastEndpoints;
 
-public class UpdateGenreEndpoint : Endpoint<Genre>
+public class UpdateGenreEndpoint : Endpoint<GenreDTO>
 {
     private readonly IGenreService _genreService;
 
@@ -14,11 +16,13 @@ public class UpdateGenreEndpoint : Endpoint<Genre>
     public override void Configure()
     {
         Put("/api/genre/UpdateGenre");
-        AllowAnonymous();
+        Options(o => o.AutoTagOverride("Genres"));
+        Roles("Admin");
     }
 
-    public override async Task HandleAsync(Genre genre, CancellationToken ct)
+    public override async Task HandleAsync(GenreDTO req, CancellationToken ct)
     {
+        var genre = new Genre { Id = req.Id, GenreName = req.GenreName };
         if (!ValidationFailed)
         {
             await _genreService.UpdateGenre(genre);

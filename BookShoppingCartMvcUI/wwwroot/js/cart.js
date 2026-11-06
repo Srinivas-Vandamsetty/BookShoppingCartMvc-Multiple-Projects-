@@ -1,18 +1,9 @@
-﻿document.addEventListener("DOMContentLoaded", function () {
-    loadCartCount();
-});
-
-async function loadCartCount() {
+document.addEventListener("DOMContentLoaded", async () => {
+    if (!document.getElementById("username")) return;
     try {
-        var response = await fetch(`/Cart/GetTotalItemInCart`);
-        if (response.status == 200) {
-            var result = await response.json();
-            var cartCountEl = document.getElementById("cartCount");
-            if (cartCountEl) {
-                cartCountEl.innerHTML = result;
-            }
-        }
-    } catch (err) {
-        console.log(err);
-    }
-}
+        const response = await fetch("/Cart/GetTotalItemInCart", { headers: { Accept: "application/json" } });
+        if (!response.ok) throw new Error("Unable to load cart count.");
+        const element = document.getElementById("cartCount");
+        if (element) element.textContent = await response.json();
+    } catch (err) { console.warn(err.message); }
+});

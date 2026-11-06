@@ -1,114 +1,90 @@
-﻿using BookShoppingCart.Business.Services;
+using BookShoppingCart.Business.Services;
+using BookShoppingCart.Data.Repositories;
+using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models.DTOs;
+using BookShoppingCartMvcUI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace BookShoppingCartMvcUI.Controllers;
 
-// Only admin users can access this controller
 [Authorize(Roles = nameof(Roles.Admin))]
-public class AdminOperationsController : Controller
+public class AdminOperationsController(IUserOrderService orders, CommerceApiClient api) : Controller
 {
-    private readonly IUserOrderService _userOrderService;
-
-    // Constructor to inject the user order service
-    public AdminOperationsController(IUserOrderService userOrderService)
+    public async Task<IActionResult> AllOrders(int page = 1, string? status = null, string? search = null)
     {
-        _userOrderService = userOrderService;
+        var path = QueryHelpers.AddQueryString($"admin/orders?page={page}", new Dictionary<string,string?> { ["status"] = status, ["search"] = search });
+        var items = await api.Get<CommercePage<OrderResponse>>(path);
+        ViewBag.Page = page;
+        ViewBag.HasNext = items.HasNext;
+        ViewBag.StatusFilter = status;
+        ViewBag.Search = search;
+        return View(items.Items.Select(o => o.ToModel()));
     }
 
-    // Show all orders to admin
-    public async Task<IActionResult> AllOrders()
+    [HttpPost]
+    public async Task<IActionResult> RecordCashCollection(int orderId, CashCollectionRequest request)
     {
-        var orders = await _userOrderService.GetUserOrders(true);
-        return View(orders);
-    }
-
-    // Toggle the payment status of an order
-    public async Task<IActionResult> TogglePaymentStatus(int orderId)
-    {
-        try
+        if (!ModelState.IsValid) TempData["errorMessage"] = "Enter a reason for the cash collection change.";
+        else
         {
-            await _userOrderService.TogglePaymentStatus(orderId);
-        }
-        catch (Exception ex)
-        {
-            // Handle exception (optional logging)
+            try
+            {
+                await api.Send(HttpMethod.Put, $"admin/orders/{orderId}/cash-collection", request);
+                TempData["successMessage"] = "Cash collection recorded.";
+            }
+            catch (CommerceApiException ex) { TempData["errorMessage"] = ex.Message; }
         }
         return RedirectToAction(nameof(AllOrders));
     }
 
-    // Show the update order status form
+    // Keep the original form route compatible while moving the current UI to explicit updates.
+    [HttpPost]
+    public async Task<IActionResult> TogglePaymentStatus(int orderId)
+    {
+        try { await orders.TogglePaymentStatus(orderId); }
+        catch (CommerceApiException ex) { TempData["errorMessage"] = ex.Message; }
+        return RedirectToAction(nameof(AllOrders));
+    }
+
+    private async Task Populate(UpdateOrderStatusModel data, Order order)
+    {
+        data.OrderStatusList = (await orders.GetOrderStatuses())
+            .Where(s => OrderTransitions.Allows(order.OrderStatus.StatusName, s.StatusName))
+            .Where(s => s.StatusName != "Cancelled" || !order.IsPaid || s.Id == order.OrderStatusId)
+            .Select(s => new SelectListItem(s.StatusName, s.Id.ToString(), s.Id == data.OrderStatusId));
+    }
+
     public async Task<IActionResult> UpdateOrderStatus(int orderId)
     {
-        var order = await _userOrderService.GetOrderById(orderId);
-
-        // If the order is not found, show an error
-        if (order == null)
-        {
-            throw new InvalidOperationException($"Order with id:{orderId} does not found.");
-        }
-
-        // Create dropdown list for order statuses
-        var orderStatusList = (await _userOrderService.GetOrderStatuses()).Select(orderStatus =>
-        {
-            return new SelectListItem
-            {
-                Value = orderStatus.Id.ToString(),
-                Text = orderStatus.StatusName,
-                Selected = order.OrderStatusId == orderStatus.Id
-            };
-        });
-
-        // Prepare the data to pass to the view
-        var data = new UpdateOrderStatusModel
-        {
-            OrderId = orderId,
-            OrderStatusId = order.OrderStatusId,
-            OrderStatusList = orderStatusList
-        };
-
+        var order = await orders.GetOrderById(orderId);
+        if (order is null) return NotFound();
+        var data = new UpdateOrderStatusModel { OrderId = orderId, OrderStatusId = order.OrderStatusId,
+            ExpectedStatusId = order.OrderStatusId, OperationId = Guid.NewGuid() };
+        await Populate(data, order);
         return View(data);
     }
 
-    // Handle form submission to update order status
     [HttpPost]
     public async Task<IActionResult> UpdateOrderStatus(UpdateOrderStatusModel data)
     {
-        try
+        if (ModelState.IsValid)
         {
-            // If the form is not valid, reload the dropdown and return to the form
-            if (!ModelState.IsValid)
+            try
             {
-                data.OrderStatusList = (await _userOrderService.GetOrderStatuses()).Select(orderStatus =>
-                {
-                    return new SelectListItem
-                    {
-                        Value = orderStatus.Id.ToString(),
-                        Text = orderStatus.StatusName,
-                        Selected = orderStatus.Id == data.OrderStatusId
-                    };
-                });
-
-                return View(data);
+                await orders.ChangeOrderStatus(data);
+                TempData["msg"] = "Order status updated.";
+                return RedirectToAction(nameof(UpdateOrderStatus), new { orderId = data.OrderId });
             }
-
-            // Update the order status
-            await _userOrderService.ChangeOrderStatus(data);
-            TempData["msg"] = "Updated successfully";
+            catch (CommerceApiException ex) { ModelState.AddModelError("", ex.Message); }
         }
-        catch (Exception ex)
-        {
-            TempData["msg"] = "Something went wrong";
-        }
-
-        // Redirect back to the update form
-        return RedirectToAction(nameof(UpdateOrderStatus), new { orderId = data.OrderId });
+        var order = await orders.GetOrderById(data.OrderId);
+        if (order is null) return NotFound();
+        await Populate(data, order);
+        return View(data);
     }
 
-    // Show the admin dashboard page
-    public IActionResult Dashboard()
-    {
-        return View();
-    }
+    public IActionResult Dashboard() => View();
 }

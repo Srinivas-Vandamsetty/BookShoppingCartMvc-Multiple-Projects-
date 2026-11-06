@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models;
 using BookShoppingCart.Models.Models.DTOs;
 using System.Threading.Tasks;
 
@@ -11,7 +11,7 @@ namespace BookShoppingCart.Data.Repositories
         Task<int> RemoveItem(int bookId);
         Task<ShoppingCart> GetUserCart();
         Task<int> GetCartItemCount(string userId = "");
-        Task<ShoppingCart> GetCart(string userId);
+        Task<ShoppingCart?> GetCart(string userId);
         Task<bool> DoCheckout(CheckoutModel model);
     }
 }

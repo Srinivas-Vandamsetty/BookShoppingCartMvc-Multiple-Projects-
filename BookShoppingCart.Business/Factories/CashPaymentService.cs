@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +11,13 @@ namespace BookShoppingCart.Business.Factories
     {
         public async Task<PaymentResult> ProcessPayment(decimal amount)
         {
-            await Task.Delay(500);
+            await Task.CompletedTask;
 
             return new PaymentResult
             {
                 IsSuccess = true,
-                TransactionId = Guid.NewGuid().ToString(),
-                Message = "Cash payment processed successfully"
+                TransactionId = "",
+                Message = "Cash on delivery selected; payment has not been collected"
             };
         }
     }

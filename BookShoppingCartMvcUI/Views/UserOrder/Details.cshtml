@@ -1,0 +1,27 @@
+@model BookShoppingCart.Models.Models.Order
+@{
+    ViewData["Title"] = "Order details";
+}
+<section class="container py-4">
+    <a asp-action="UserOrders" class="btn btn-outline-secondary mb-3">Back to orders</a>
+    <h1 class="h3">Order #@Model.Id</h1>
+    <p>@Model.CreateDate.ToString("dd MMM yyyy") · @Model.OrderStatus.StatusName</p>
+    <div class="table-responsive">
+        <table class="table">
+            <thead><tr><th>Book</th><th>Quantity</th><th>Unit price</th><th>Amount</th></tr></thead>
+            <tbody>
+                @foreach (var item in Model.OrderDetail)
+                {
+                    <tr><td>@item.BookName</td><td>@item.Quantity</td><td>₹@item.UnitPrice.ToString("0.00")</td><td>₹@((item.UnitPrice * item.Quantity).ToString("0.00"))</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <dl class="row">
+        <dt class="col-sm-3">Subtotal</dt><dd class="col-sm-9">₹@Model.Subtotal.ToString("0.00")</dd>
+        <dt class="col-sm-3">Discount</dt><dd class="col-sm-9">₹@Model.Discount.ToString("0.00")</dd>
+        <dt class="col-sm-3">Shipping</dt><dd class="col-sm-9">₹@Model.Shipping.ToString("0.00")</dd>
+        <dt class="col-sm-3">Total</dt><dd class="col-sm-9 fw-bold">₹@Model.Total.ToString("0.00")</dd>
+        <dt class="col-sm-3">Payment</dt><dd class="col-sm-9">@Model.PaymentMethod · @(Model.IsPaid ? "Paid" : "Pending")</dd>
+    </dl>
+</section>

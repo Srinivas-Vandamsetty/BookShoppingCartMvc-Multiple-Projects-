@@ -1,4 +1,4 @@
-﻿@using BookShoppingCart.Models.Models
+@using BookShoppingCart.Models.Models
 @model IEnumerable<Genre>
 
 @{
@@ -34,11 +34,11 @@
                                        class="btn btn-success btn-sm">
                                         <i class="bi bi-pencil-square"></i> Edit
                                     </a>
-                                    <a asp-action="DeleteGenre" asp-controller="Genre" asp-route-id="@genre.Id"
-                                       class="btn btn-danger btn-sm"
-                                       onclick="return confirm('Are you sure you want to delete this genre?')">
+                                    <form asp-action="DeleteGenre" method="post" class="d-inline">
+<input type="hidden" name="id" value="@genre.Id" />
+<button type="submit" class="btn btn-danger btn-sm">
                                         <i class="bi bi-trash"></i> Delete
-                                    </a>
+                                    </button></form>
                                 </div>
                             </td>
                         </tr>

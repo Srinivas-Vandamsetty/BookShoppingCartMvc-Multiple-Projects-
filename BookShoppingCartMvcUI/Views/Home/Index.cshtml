@@ -1,16 +1,16 @@
-﻿@using BookShoppingCart.Models.Models.DTOs
+@using BookShoppingCart.Models.Models.DTOs
 @model BookDisplayModel
 @{
     int pageSize = 12;
-    int pageNumber = Context.Request.Query["page"].ToString() == "" ? 1 : int.Parse(Context.Request.Query["page"]);
-    int totalBooks = Model.Books.Count();
+    int pageNumber = Model.Page;
+    int totalBooks = Model.TotalCount;
     int totalPages = (int)Math.Ceiling((double)totalBooks / pageSize);
-    var pagedBooks = Model.Books.Skip((pageNumber - 1) * pageSize).Take(pageSize);
+    var pagedBooks = Model.Books;
 }
 
 <div class="bg-white text-black py-2 text-center fw-bold">
     <marquee behavior="scroll" direction="left" scrollamount="6">
-        🚚 Free Delivery on Orders Above ₹999!🎉
+        🚚 Free Delivery on Orders of ₹999 or more after discounts!🎉
 
     </marquee>
 </div>
@@ -79,20 +79,20 @@
             <ul class="pagination justify-content-center mt-4">
                 <!-- Previous button with fade effect when on the first page -->
                 <li class="page-item @(pageNumber == 1 ? "disabled" : "")">
-                    <a class="page-link bg-warning text-light border-secondary @(pageNumber == 1 ? "opacity-50 cursor-not-allowed" : "")" href="?page=@(pageNumber - 1)" tabindex="-1">Previous</a>
+                    <a class="page-link bg-warning text-light border-secondary @(pageNumber == 1 ? "opacity-50 cursor-not-allowed" : "")" asp-action="Index" asp-route-page="@(pageNumber - 1)" asp-route-sTerm="@Model.STerm" asp-route-genreId="@Model.GenreId" tabindex="-1">Previous</a>
                 </li>
-                @for (int i = 1; i <= totalPages; i++)
+                @for (int i = Math.Max(1, pageNumber - 2); i <= Math.Min(totalPages, pageNumber + 2); i++)
                 {
                     var isActive = i == pageNumber;
                     <li class="page-item @(isActive ? "active" : "")">
-                        <a class="page-link @(isActive ? "bg-dark text-white fw-bold border-warning" : "bg-warning text-light border-secondary")" href="?page=@i">
+                        <a class="page-link @(isActive ? "bg-dark text-white fw-bold border-warning" : "bg-warning text-light border-secondary")" asp-action="Index" asp-route-page="@i" asp-route-sTerm="@Model.STerm" asp-route-genreId="@Model.GenreId">
                             @i
                         </a>
                     </li>
                 }
                 <!-- Next button with fade effect when on the last page -->
                 <li class="page-item @(pageNumber == totalPages ? "disabled" : "")">
-                    <a class="page-link bg-warning text-light border-secondary @(pageNumber == totalPages ? "opacity-50 cursor-not-allowed" : "")" href="?page=@(pageNumber + 1)">Next</a>
+                    <a class="page-link bg-warning text-light border-secondary @(pageNumber == totalPages ? "opacity-50 cursor-not-allowed" : "")" asp-action="Index" asp-route-page="@(pageNumber + 1)" asp-route-sTerm="@Model.STerm" asp-route-genreId="@Model.GenreId">Next</a>
                 </li>
             </ul>
         </nav>

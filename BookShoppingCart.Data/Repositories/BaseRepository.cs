@@ -1,4 +1,4 @@
-﻿using BookShoppingCart.Data.Data;
+using BookShoppingCart.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace BookShoppingCart.Data.Repositories
 {
     // Generic repository providing basic CRUD operations
-    public class BaseRepository<T> : IBaseRepository<T> where T : class
+    public class BaseRepository<T> : IBaseRepository<T> where T : class, BookShoppingCart.Models.Models.IEntity
     {
         protected readonly ApplicationDbContext _context;
         private readonly DbSet<T> _dbSet;
@@ -31,7 +31,7 @@ namespace BookShoppingCart.Data.Repositories
         public async Task UpdateAsync(T entity)
         {
             // Get existing entity from database
-            var existing = await _dbSet.FindAsync(((dynamic)entity).Id);
+            var existing = await _dbSet.FindAsync(entity.Id);
 
             if (existing == null)
                 throw new Exception("Entity not found");
@@ -58,13 +58,13 @@ namespace BookShoppingCart.Data.Repositories
         // Retrieves all entities from the database
         public async Task<IEnumerable<T>> GetAllAsync()
         {
-            return await _dbSet.ToListAsync();
+            return await _dbSet.AsNoTracking().ToListAsync();
         }
 
         // Get records by condition (e.g., all books with price > 500)
         public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
         {
-            return await _dbSet.Where(predicate).ToListAsync();
+            return await _dbSet.AsNoTracking().Where(predicate).ToListAsync();
         }
     }
 }

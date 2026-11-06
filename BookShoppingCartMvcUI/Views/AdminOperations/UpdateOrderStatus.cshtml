@@ -1,4 +1,4 @@
-﻿@using BookShoppingCart.Models.Models.DTOs
+@using BookShoppingCart.Models.Models.DTOs
 @model UpdateOrderStatusModel
 
 @{
@@ -20,6 +20,9 @@
 
                 <!-- Hidden field to hold the order ID -->
                 <input type="hidden" asp-for="OrderId" />
+                <input type="hidden" asp-for="ExpectedStatusId" />
+                <input type="hidden" asp-for="OperationId" />
+                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
                 <div class="mb-3">
                     <label class="form-label"><i class="bi bi-clipboard-check me-1"></i>Select Order Status</label>
@@ -29,6 +32,11 @@
                     <span class="text-danger" asp-validation-for="OrderStatusId"></span>
                 </div>
 
+                <div class="mb-3">
+                    <label asp-for="Reason" class="form-label">Reason</label>
+                    <textarea asp-for="Reason" class="form-control" maxlength="300" required></textarea>
+                    <span asp-validation-for="Reason" class="text-danger"></span>
+                </div>
                 <button type="submit" class="btn btn-success">
                     <i class="bi bi-check-circle me-1"></i>Update
                 </button>

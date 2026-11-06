@@ -1,107 +1,67 @@
-﻿using BookShoppingCart.Business.Services;
-using BookShoppingCart.Models.Models.DTOs;
+using BookShoppingCart.Business.Services;
 using BookShoppingCart.Models.Models;
+using BookShoppingCart.Models.Models.DTOs;
 using BookStoreCore.Shared;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BookShoppingCart.Business.Facades
+namespace BookShoppingCart.Business.Facades;
+public class BookFacade(IBookService books, IFileService files) : IBookFacade
 {
-    public class BookFacade : IBookFacade
+    public Task<IEnumerable<Book>> GetBooks(int page = 1) => books.GetBooks(page);
+    public Task<Book> GetBookById(int id) => books.GetBookById(id);
+    public async Task AddBook(BookDTO dto)
     {
-        private readonly IBookService _bookService;
-        private readonly IFileService _fileService;
-
-        public BookFacade(
-            IBookService bookService,
-            IFileService fileService)
+        string? uploaded = null;
+        try
         {
-            _bookService = bookService;
-            _fileService = fileService;
+            if (dto.ImageFile is not null) uploaded = await files.SaveFile(dto.ImageFile, [".jpeg", ".jpg", ".png"]);
+            await books.AddBook(Map(dto, uploaded ?? ""));
         }
-
-        public async Task<IEnumerable<Book>> GetBooks()
+        catch (BookWriteUnconfirmedException)
         {
-            return await _bookService.GetBooks();
+            // A committed remote save may already reference this file. Let background cleanup verify it.
+            throw;
         }
-
-        public async Task<Book> GetBookById(int id)
+        catch
         {
-            return await _bookService.GetBookById(id);
+            if (uploaded is not null) files.DeleteFile(uploaded);
+            throw;
         }
-
-        public async Task AddBook(BookDTO bookDto)
+    }
+    public async Task UpdateBook(BookDTO dto)
+    {
+        var existing = await books.GetBookById(dto.Id);
+        var oldImage = existing.Image; // Trust persisted ownership, never a hidden form field.
+        string? uploaded = null;
+        try
         {
-            // Handle Image Upload
-            if (bookDto.ImageFile != null)
-            {
-                if (bookDto.ImageFile.Length > 1 * 1024 * 1024)
-                    throw new InvalidOperationException("Image file cannot exceed 1 MB");
-
-                string[] allowedExtensions = [".jpeg", ".jpg", ".png"];
-                bookDto.Image = await _fileService.SaveFile(bookDto.ImageFile, allowedExtensions);
-            }
-
-            Book book = new()
-            {
-                BookName = bookDto.BookName,
-                AuthorName = bookDto.AuthorName,
-                GenreId = bookDto.GenreId,
-                Price = bookDto.Price,
-                Image = bookDto.Image
-            };
-
-            await _bookService.AddBook(book);
+            if (dto.ImageFile is not null) uploaded = await files.SaveFile(dto.ImageFile, [".jpeg", ".jpg", ".png"]);
+            await books.UpdateBook(Map(dto, uploaded ?? oldImage));
         }
-
-        public async Task UpdateBook(BookDTO bookDto)
+        catch (BookWriteUnconfirmedException)
         {
-            string oldImage = bookDto.Image;
-
-            if (bookDto.ImageFile != null)
-            {
-                if (bookDto.ImageFile.Length > 1 * 1024 * 1024)
-                    throw new InvalidOperationException("Image file cannot exceed 1 MB");
-
-                string[] allowedExtensions = [".jpeg", ".jpg", ".png"];
-                bookDto.Image = await _fileService.SaveFile(bookDto.ImageFile, allowedExtensions);
-            }
-
-            Book book = new()
-            {
-                Id = bookDto.Id,
-                BookName = bookDto.BookName,
-                AuthorName = bookDto.AuthorName,
-                GenreId = bookDto.GenreId,
-                Price = bookDto.Price,
-                Image = bookDto.Image
-            };
-
-            await _bookService.UpdateBook(book);
-
-            if (!string.IsNullOrWhiteSpace(oldImage) && oldImage != bookDto.Image)
-                _fileService.DeleteFile(oldImage);
+            // A committed remote save may already reference this file. Let background cleanup verify it.
+            throw;
         }
-
-        public async Task DeleteBook(int id)
+        catch
         {
-            await _bookService.DeleteBook(id);
+            if (uploaded is not null) files.DeleteFile(uploaded);
+            throw;
         }
-
-        public async Task CloneBook(int id)
-        {
-            var existingBook = await _bookService.GetBookById(id);
-
-            if (existingBook == null)
-                throw new Exception("Book not found");
-
-            var clonedBook = existingBook.Clone();
-            clonedBook.BookName += " (Copy)";
-
-            await _bookService.AddBook(clonedBook);
-        }
+        if (uploaded is not null && !string.IsNullOrEmpty(oldImage))
+            await books.DeleteUnusedImage(oldImage);
+    }
+    private static Book Map(BookDTO dto, string image) => new()
+    {
+        Id = dto.Id, BookName = dto.BookName, AuthorName = dto.AuthorName,
+        GenreId = dto.GenreId, Price = dto.Price, Image = image
+    };
+    public Task DeleteBook(int id) => books.DeleteBook(id);
+    public async Task CloneBook(int id)
+    {
+        var original = await books.GetBookById(id);
+        var clone = original.Clone();
+        const string suffix = " (Copy)";
+        clone.BookName = original.BookName[..Math.Min(original.BookName.Length, 40 - suffix.Length)] + suffix;
+        // Shared assets are retained until no book (including archives) references them.
+        await books.AddBook(clone);
     }
 }
