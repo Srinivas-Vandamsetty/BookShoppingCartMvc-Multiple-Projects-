@@ -20,7 +20,7 @@ public class CheckoutReviewTests
         var gateway = new Mock<BookShoppingCartMvcUI.Services.ICommerceCartGateway>();
         gateway.Setup(g => g.Quote(null)).ReturnsAsync(() => new CheckoutQuoteResponse(Guid.NewGuid(), Guid.NewGuid().ToString(),
             DateTime.UtcNow.AddMinutes(15), 100m, 0m, 50m, 150m));
-        gateway.Setup(g => g.PaymentMethods()).ReturnsAsync([new("cash", "Cash on delivery")]);
+        gateway.Setup(g => g.PaymentMethods()).ReturnsAsync(CheckoutPaymentMethods.Available.ToList());
         var controller = new CartController(cart.Object, gateway.Object);
         var initial = Assert.IsType<CheckoutModel>(Assert.IsType<ViewResult>(await controller.Checkout()).Model);
         var oldKey = initial.CheckoutKey;

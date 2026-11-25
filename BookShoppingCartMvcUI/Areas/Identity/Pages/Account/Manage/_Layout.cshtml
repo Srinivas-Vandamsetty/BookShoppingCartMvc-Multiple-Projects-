@@ -1,40 +1,27 @@
+@using System.Security.Claims
 @{
-    if (ViewData.TryGetValue("ParentLayout", out var parentLayout))
-    {
-        Layout = parentLayout as string ?? "/Views/Shared/_Layout.cshtml";
-    }
-    else
-    {
-        Layout = "/Views/Shared/_Layout.cshtml";
-    }
+    Layout = ViewData.TryGetValue("ParentLayout", out var parentLayout)
+        ? parentLayout as string ?? "/Views/Shared/_Layout.cshtml"
+        : "/Views/Shared/_Layout.cshtml";
+    var name = User.Identity?.Name ?? "Reader";
+    var initials = string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+    var role = User.FindFirstValue(ClaimTypes.Role) ?? "Customer";
 }
 
-<div class="container-fluid py-5" style="background: #f8f9fa; min-height: 100vh;">
-    <div class="mb-5 text-center">
-        <h1 class="fw-bold" style="font-size: 3rem; color: #2c3e50; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">
-            Manage Your Account
-        </h1>
-        <p class="lead text-muted">Update your details, manage security, and customize preferences</p>
+<section class="account-settings">
+    <div class="account-settings__hero">
+        <div><p class="account-settings__eyebrow">BOOKVERSE ACCOUNT</p><h1>Account Settings</h1><p>Manage your profile, security, and bookstore preferences.</p></div>
+        <div class="account-settings__identity"><span class="account-avatar">@initials</span><span><small>Hello, @name</small><strong><i class="bi bi-patch-check-fill"></i> Verified Account</strong></span></div>
     </div>
-
-    <div class="row justify-content-center">
-        <!-- Sidebar -->
-        <div class="col-md-4 col-lg-3 mb-4">
-            <div class="bg-white p-4 rounded-4 shadow-lg border">
-                <h5 class="fw-bold mb-3 text-bs-gray-dark">Account Settings</h5>
-                <partial name="_ManageNav" />
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="col-md-8 col-lg-7">
-            <div class="bg-white p-5 rounded-4 shadow-lg border">
-                @RenderBody()
-            </div>
-        </div>
+    <div class="account-settings__grid">
+        <aside class="account-settings__nav"><partial name="_ManageNav" /></aside>
+        <main class="account-settings__content">@RenderBody()</main>
+        <aside class="account-settings__summary">
+            <div class="account-summary__top"><span class="account-avatar account-avatar--large">@initials</span><div><h2>@name</h2><span class="account-role">@role</span><p><i class="bi bi-check-circle-fill"></i> Verified Account</p></div></div>
+            <div class="account-summary__security"><h3><i class="bi bi-shield-check"></i> Account Security</h3><p><i class="bi bi-check-circle-fill"></i> Email verified</p><p><i class="bi bi-check-circle-fill"></i> Secure sign-in</p><a asp-page="./ChangePassword">Manage password <i class="bi bi-arrow-right"></i></a></div>
+            <a class="account-summary__orders" href="/UserOrder/UserOrders"><i class="bi bi-box-seam"></i><span><strong>Order History</strong><small>View and track your past orders.</small></span><i class="bi bi-arrow-right"></i></a>
+        </aside>
     </div>
-</div>
+</section>
 
-@section Scripts {
-    @RenderSection("Scripts", required: false)
-}
+@section Scripts { @RenderSection("Scripts", required: false) }

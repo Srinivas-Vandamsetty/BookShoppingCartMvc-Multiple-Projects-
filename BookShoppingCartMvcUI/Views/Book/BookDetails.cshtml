@@ -39,7 +39,7 @@
                         }
                         else
                         {
-                            <a asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="@Context.Request.Path" class="btn btn-warning">Sign in to add to cart</a>
+                            <a asp-controller="Auth" asp-action="Login" asp-route-returnUrl="@Context.Request.Path" class="btn btn-warning">Sign in to add to cart</a>
                         }
                     }
                     <a asp-action="Index" asp-controller="Home" class="btn btn-outline-dark rounded-pill px-4 py-2">

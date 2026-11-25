@@ -9,6 +9,6 @@ namespace BookShoppingCart.Business.Services
     {
         Task<IEnumerable<Book>> GetBooks(string sTerm = "", int genreId = 0);
         Task<IEnumerable<Genre>> GetGenres();
-        Task<BookShoppingCart.Models.Models.DTOs.PagedBooks> SearchBooks(string sTerm = "", int genreId = 0, int page = 1, int pageSize = 12, CancellationToken ct = default);
+        Task<BookShoppingCart.Models.Models.DTOs.PagedBooks> SearchBooks(string sTerm = "", int genreId = 0, int page = 1, int pageSize = 12, BookShoppingCart.Models.Models.DTOs.CatalogSearchFilters? filters = null, CancellationToken ct = default);
     }
 }

@@ -7,6 +7,7 @@ namespace BookShoppingCart.Business.Services
     public interface IGenreService
     {
         Task<IEnumerable<Genre>> GetGenres();
+        Task<IEnumerable<Genre>> GetGenresWithBookCounts();
         Task<Genre?> GetGenreById(int id);
         Task AddGenre(Genre genre);
         Task UpdateGenre(Genre genre);

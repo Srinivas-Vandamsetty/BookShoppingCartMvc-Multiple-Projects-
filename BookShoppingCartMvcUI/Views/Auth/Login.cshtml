@@ -1,0 +1,54 @@
+@model BookShoppingCartMvcUI.Models.AuthLoginViewModel
+@{
+    ViewData["Title"] = "Sign in to BookVerse";
+}
+<link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+<section class="bv-login" aria-labelledby="login-title">
+    <div class="bv-login-card">
+        <aside class="bv-login-story" aria-label="Welcome to BookVerse">
+            <span class="bv-login-eyebrow">YOUR NEXT CHAPTER STARTS HERE</span>
+            <h1>A world of stories.<br />One place to call yours.</h1>
+            <p>Pick up where you left off. Discover your next favorite book, revisit your cart, and make room for a little inspiration.</p>
+            <div class="bv-login-story-note"><span aria-hidden="true">&#10022;</span> Good books. Great possibilities.</div>
+        </aside>
+        <div class="bv-login-form-panel">
+            <div class="bv-login-brand"><span aria-hidden="true">&#128214;</span> Book<span>Verse</span></div>
+            <p class="bv-login-kicker">WELCOME BACK</p>
+            <h2 id="login-title">Sign in to your story</h2>
+            <p class="bv-login-subtitle">Your bookshelf is waiting for you.</p>
+            @if (Model.SessionExpired)
+            { <p class="bv-login-notice" role="status">Your session expired. Please sign in again.</p> }
+            else if (!string.IsNullOrEmpty(Model.ReturnUrl))
+            { <p class="bv-login-notice" role="status">Sign in to continue to your requested page.</p> }
+            <form method="post" id="bookverse-login">
+                <input asp-for="ReturnUrl" type="hidden" />
+                <div asp-validation-summary="ModelOnly" class="bv-login-errors" role="alert" aria-live="polite"></div>
+                <div class="bv-login-field">
+                    <label asp-for="Email">Email address</label>
+                    <input asp-for="Email" type="email" autocomplete="username" inputmode="email" placeholder="you@example.com" aria-describedby="email-error" autofocus />
+                    <span asp-validation-for="Email" id="email-error" class="bv-login-field-error"></span>
+                </div>
+                <div class="bv-login-field">
+                    <label asp-for="Password">Password</label>
+                    <div class="bv-login-password">
+                        <input asp-for="Password" autocomplete="current-password" placeholder="Enter your password" aria-describedby="password-error" />
+                        <button type="button" id="toggle-password" aria-label="Show password" aria-controls="Password" aria-pressed="false" hidden>Show</button>
+                    </div>
+                    <span asp-validation-for="Password" id="password-error" class="bv-login-field-error"></span>
+                </div>
+                <div class="bv-login-options">
+                    <label class="bv-login-remember"><input asp-for="RememberMe" /> Keep me signed in</label>
+                    <span class="bv-login-api-note"><i class="bi bi-shield-lock"></i> Secure JWT sign-in</span>
+                </div>
+                <button type="submit" class="bv-login-submit" id="login-submit"><span id="login-button-text">Sign in</span><span aria-hidden="true">&#8594;</span></button>
+                <p class="bv-login-progress" id="login-progress" role="status" aria-live="polite"></p>
+            </form>
+            <p class="bv-login-register">New to BookVerse? <a asp-area="Identity" asp-page="/Account/Register" asp-route-returnUrl="@Model.ReturnUrl">Create an account</a></p>
+            <p class="bv-login-security"><span aria-hidden="true">&#128274;</span> Tokens are securely managed by BookVerse.</p>
+        </div>
+    </div>
+</section>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/auth-login.js" asp-append-version="true"></script>
+}

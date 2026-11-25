@@ -64,8 +64,7 @@ namespace BookShoppingCart.Business.Services
             if (string.IsNullOrWhiteSpace(model.PaymentMethod))
                 throw new ArgumentException("Payment method is required.");
 
-            if (!string.Equals(model.PaymentMethod, "cash", StringComparison.OrdinalIgnoreCase))
-                throw new NotSupportedException("Electronic payments are not configured. Please use cash on delivery.");
+            CheckoutPaymentMethods.Normalize(model.PaymentMethod);
             return await _cartRepo.DoCheckout(model);
         }
     }

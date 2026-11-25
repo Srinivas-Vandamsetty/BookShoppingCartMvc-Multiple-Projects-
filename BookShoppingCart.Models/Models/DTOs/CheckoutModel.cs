@@ -21,6 +21,11 @@ public class CheckoutModel
 
     [Required]
     public string PaymentMethod { get; set; } = string.Empty;
+    [StringLength(80)] public string? CardholderName { get; set; }
+    [StringLength(25)] public string? CardNumber { get; set; }
+    [StringLength(5)] public string? CardExpiry { get; set; }
+    [StringLength(4)] public string? CardCvv { get; set; }
+    [StringLength(100)] public string? UpiId { get; set; }
 
     // Display only; posted totals are never used to place an order.
     [Microsoft.AspNetCore.Mvc.ModelBinding.BindNever]

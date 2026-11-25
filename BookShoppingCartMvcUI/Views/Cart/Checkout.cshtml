@@ -4,10 +4,10 @@
     ViewData["Title"] = "Checkout";
 }
 
-<div class="container my-5">
+<main class="bv-checkout container my-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            <div class="card shadow-lg border-0 rounded-4">
+            <div class="card bv-checkout__card shadow-lg border-0 rounded-4">
                 <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
                     <h2 class="mb-0">Checkout</h2>
                 </div>
@@ -56,25 +56,40 @@
                             <span asp-validation-for="Address" class="text-danger small"></span>
                         </div>
 
-                        <p>Card and UPI payments are currently unavailable. Payment is collected on delivery.</p>
                         <div class="mb-4">
                             <label asp-for="PaymentMethod" class="form-label fw-semibold">Payment Method*</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-credit-card-fill"></i></span>
-                                <select asp-for="PaymentMethod" class="form-select form-select-lg">
-                                    <option value="">Select Payment Method</option>
-                                    @foreach (var method in (IEnumerable<PaymentMethodResponse>)ViewBag.PaymentMethods)
+                            <div class="bv-payment-methods" role="radiogroup" aria-label="Payment method">
+                                @foreach (var method in (IEnumerable<PaymentMethodResponse>)ViewBag.PaymentMethods)
+                                {
+                                    var icon = method.Code switch { "cash" => "bi-cash-coin", "creditcard" => "bi-credit-card-2-front", "upi" => "bi-qr-code-scan", _ => "bi-wallet2" };
+                                    var description = method.Code switch
                                     {
-                                        <option value="@method.Code">@method.Name</option>
-                                    }
-                                </select>
+                                        "cash" => "Pay when your order is delivered.",
+                                        "creditcard" => "Sandbox authorization. No card details are collected.",
+                                        "upi" => "Sandbox authorization. No UPI PIN is collected.",
+                                        _ => ""
+                                    };
+                                    <label class="bv-payment-option">
+                                        <input type="radio" asp-for="PaymentMethod" value="@method.Code" data-payment-option />
+                                        <span class="bv-payment-option__icon"><i class="bi @icon"></i></span>
+                                        <span><strong>@method.Name</strong><small>@description</small></span>
+                                    </label>
+                                }
+                            </div>
+                            <p class="bv-payment-note" data-payment-note aria-live="polite"></p>
+                            <div class="bv-payment-details" data-payment-details>
+                                <div data-card-details hidden>
+                                    <div class="row g-2"><div class="col-12"><label asp-for="CardholderName" class="form-label">Cardholder name</label><input asp-for="CardholderName" class="form-control" autocomplete="cc-name" /></div><div class="col-md-7"><label asp-for="CardNumber" class="form-label">Card number</label><input asp-for="CardNumber" class="form-control" inputmode="numeric" autocomplete="cc-number" placeholder="4111 1111 1111 1111" /></div><div class="col-md-3"><label asp-for="CardExpiry" class="form-label">Expiry</label><input asp-for="CardExpiry" class="form-control" placeholder="11/29" autocomplete="cc-exp" /></div><div class="col-md-2"><label asp-for="CardCvv" class="form-label">CVV</label><input asp-for="CardCvv" class="form-control" inputmode="numeric" autocomplete="cc-csc" /></div></div>
+                                    <small class="text-muted">Test success: 4111 1111 1111 1111, any valid future expiry, CVV 123. Test decline: 4000 0000 0000 0002.</small>
+                                </div>
+                                <div data-upi-details hidden><label asp-for="UpiId" class="form-label">UPI ID</label><input asp-for="UpiId" class="form-control" placeholder="success@upi" autocomplete="off" /><small class="text-muted">Use success@upi for success or failure@upi to simulate a failed payment.</small></div>
                             </div>
                             <span asp-validation-for="PaymentMethod" class="text-danger small"></span>
                         </div>
 
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-check-circle-fill"></i> Proceed to Confirm
+                                <i class="bi bi-shield-check"></i> Confirm order and payment
                             </button>
                         </div>
 
@@ -84,6 +99,9 @@
             </div>
         </div>
     </div>
-</div>
+</main>
 
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/checkout-payment.js" asp-append-version="true"></script>
+}

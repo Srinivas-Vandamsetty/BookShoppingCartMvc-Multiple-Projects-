@@ -1,58 +1,60 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var dashboardClass = string.Equals(currentController, "AdminOperations", StringComparison.OrdinalIgnoreCase) &&
+                         string.Equals(currentAction, "Dashboard", StringComparison.OrdinalIgnoreCase) ? "is-active" : "";
+    var booksClass = string.Equals(currentController, "Book", StringComparison.OrdinalIgnoreCase) ? "is-active" : "";
+    var genresClass = string.Equals(currentController, "Genre", StringComparison.OrdinalIgnoreCase) ? "is-active" : "";
+    var stockClass = string.Equals(currentController, "Stock", StringComparison.OrdinalIgnoreCase) ? "is-active" : "";
+    var customersClass = string.Equals(currentController, "AdminCustomers", StringComparison.OrdinalIgnoreCase) ? "is-active" : "";
+    var usersClass = string.Equals(currentController, "AdminUsers", StringComparison.OrdinalIgnoreCase) ? "is-active" : "";
+    var isAdmin = User.IsInRole("Admin");
+    var canManageOrders = isAdmin || User.IsInRole("Employee");
+    var ordersClass = string.Equals(currentController, "AdminOperations", StringComparison.OrdinalIgnoreCase) &&
+                      !string.Equals(currentAction, "Dashboard", StringComparison.OrdinalIgnoreCase) ? "is-active" : "";
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard</title>
-
-    <!-- Bootstrap CSS -->
+    <title>@ViewData["Title"] · BookVerse Admin</title>
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('bookverse-theme') || 'dark'; } catch { document.documentElement.dataset.theme = 'dark'; }</script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- FontAwesome and Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
-
-    <!-- Custom CSS -->
-    <link href="@Url.Content("~/css/styles.css")" rel="stylesheet">
-    <link href="@Url.Content("~/css/footer.css")" rel="stylesheet">
-
+    <link href="~/css/styles.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/admin.css" rel="stylesheet" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
+    <link href="~/css/theme.css" rel="stylesheet" asp-append-version="true" />
 </head>
-<body>
-
-    <!-- Include Navbar -->
+<body class="bookverse-admin-body" data-theme-default="dark">
     <partial name="_Navbar" />
-
-    <div class="d-flex">
-        <!-- Sidebar (Static) -->
-        <div class="bg-dark text-white p-3" style="width: 250px; min-height: 100vh;">
-            <ul class="list-unstyled">
-                <li><a class="text-white text-decoration-none d-block py-2" href="/Genre/Index"><i class="bi bi-collection"></i> Genre</a></li>
-                <li><a class="text-white text-decoration-none d-block py-2" href="/Book/Index"><i class="bi bi-book"></i> Books</a></li>
-                <li><a class="text-white text-decoration-none d-block py-2" href="/Stock/Index"><i class="bi bi-archive"></i> Stock</a></li>
-                <li><a class="text-white text-decoration-none d-block py-2" href="/AdminOperations/AllOrders"><i class="bi bi-receipt"></i> Orders</a></li>
-            </ul>
-        </div>
-
-        <!-- Content Area -->
-        <div class="flex-grow-1 p-4">
-            <div class="my-2">
-                <partial name="_Notifications" />
-            </div>
+    <div class="admin-shell">
+        <aside class="admin-sidebar" aria-label="Administration navigation">
+            @if (isAdmin) { <a class="@dashboardClass" asp-controller="AdminOperations" asp-action="Dashboard"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></a> }
+            <nav>
+                @if (isAdmin)
+                {
+                    <a class="@booksClass" asp-controller="Book" asp-action="Index"><i class="bi bi-book"></i><span>Books</span></a>
+                    <a class="@genresClass" asp-controller="Genre" asp-action="Index"><i class="bi bi-layers"></i><span>Genres</span></a>
+                    <a class="@stockClass" asp-controller="Stock" asp-action="Index"><i class="bi bi-box-seam"></i><span>Stock</span></a>
+                }
+                @if (canManageOrders)
+                {
+                    <a class="@ordersClass" asp-controller="AdminOperations" asp-action="AllOrders"><i class="bi bi-receipt"></i><span>Orders</span></a>
+                    <a class="@customersClass" asp-controller="AdminCustomers" asp-action="Index"><i class="bi bi-people"></i><span>Customers</span></a>
+                }
+                @if (isAdmin) { <a class="@usersClass" asp-controller="AdminUsers" asp-action="Index"><i class="bi bi-person-gear"></i><span>Users &amp; Roles</span></a> }
+            </nav>
+        </aside>
+        <main class="admin-main">
+            <partial name="_Notifications" />
             @RenderBody()
-        </div>
+        </main>
     </div>
-
-    <!-- Include Footer -->
-    <partial name="_Footer" />
-
-    <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- JavaScript Files -->
-
     <script src="/js/cart.js"></script>
-
+    <script src="/js/theme-toggle.js" asp-append-version="true"></script>
     <script src="~/Identity/lib/jquery/dist/jquery.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

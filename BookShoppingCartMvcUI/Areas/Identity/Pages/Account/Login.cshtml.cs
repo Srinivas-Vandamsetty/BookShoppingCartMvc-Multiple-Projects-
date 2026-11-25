@@ -42,7 +42,7 @@ public sealed class LoginModel(BrowserAuthenticationService authentication, ILog
             await authentication.SignInAsync(Input.Email.Trim(), Input.Password, Input.RememberMe,
                 HttpContext, HttpContext.RequestAborted);
             logger.LogInformation("User signed in through the authentication API.");
-            return LocalRedirect(ReturnUrl ?? (HttpContext.User.IsInRole("Admin") ? "/AdminOperations/Dashboard" : "/Home/Index"));
+            return LocalRedirect(ReturnUrl ?? "/FrontPage/Index");
         }
         catch (AuthenticationApiException ex) { ModelState.AddModelError("", ex.Message); }
         catch (Exception ex) when (ex is HttpRequestException or DbException ||

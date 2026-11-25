@@ -78,8 +78,8 @@ public sealed class CartPersistenceTests : IAsyncLifetime
         var order = await _db.Orders.Include(o => o.OrderDetail).SingleAsync();
         Assert.Equal(200m, order.Subtotal);
         Assert.Equal(20m, order.Discount);
-        Assert.Equal(50m, order.Shipping);
-        Assert.Equal(230m, order.Total);
+        Assert.Equal(40m, order.Shipping);
+        Assert.Equal(220m, order.Total);
         Assert.False(order.IsPaid);
         Assert.Equal(100m, order.OrderDetail.Single().UnitPrice);
         Assert.Equal("Book", order.OrderDetail.Single().BookName);
@@ -96,11 +96,24 @@ public sealed class CartPersistenceTests : IAsyncLifetime
         Assert.Equal(2, await _db.CartDetails.Select(d => d.Quantity).SingleAsync());
         Assert.Equal(1, await _db.Stocks.Select(d => d.Quantity).SingleAsync());
     }
-    [Theory] [InlineData("creditcard")] [InlineData("upi")] [InlineData("invalid")]
-    public async Task ElectronicAndUnknownPayment_NeverCreateOrder(string method)
+    [Theory] [InlineData("creditcard")] [InlineData("upi")]
+    public async Task ElectronicPayment_CreatesPaidOrder(string method)
     {
         await _cart.AddItem(1,1);
         var request = Checkout(); request.PaymentMethod = method;
+        if (method == "creditcard") { request.CardholderName = "Test Reader"; request.CardNumber = "4111111111111111"; request.CardExpiry = "11/29"; request.CardCvv = "123"; }
+        else request.UpiId = "success@upi";
+        Assert.True(await _cart.DoCheckout(request));
+        var order = await _db.Orders.SingleAsync();
+        Assert.Equal(method, order.PaymentMethod);
+        Assert.True(order.IsPaid);
+        Assert.Equal(4, await _db.Stocks.Select(s => s.Quantity).SingleAsync());
+    }
+    [Fact]
+    public async Task UnknownPayment_NeverCreatesOrder()
+    {
+        await _cart.AddItem(1,1);
+        var request = Checkout(); request.PaymentMethod = "invalid";
         await Assert.ThrowsAsync<NotSupportedException>(() => _cart.DoCheckout(request));
         Assert.Empty(await _db.Orders.ToListAsync());
         Assert.Equal(5, await _db.Stocks.Select(s => s.Quantity).SingleAsync());
@@ -152,7 +165,25 @@ public sealed class CartPersistenceTests : IAsyncLifetime
         Assert.Equal(genreId,result.Items[0].GenreId);
         Assert.All(await new HomeRepository(_db).GetBooks(), b=>Assert.Equal(genreId,b.GenreId));
     }
-    [Theory] [InlineData(999,0)] [InlineData(998,50)] [InlineData(1000,0)]
+    [Fact] public async Task Catalog_FiltersByAuthorPriceAndStock_AndSorts()
+    {
+        var genreId = await _db.Genres.Select(g => g.Id).SingleAsync();
+        _db.Books.AddRange(
+            new Book { BookName = "Alpha", AuthorName = "Selected Author", GenreId = genreId, Price = 250m, Stock = new Stock { Quantity = 2 } },
+            new Book { BookName = "Beta", AuthorName = "Selected Author", GenreId = genreId, Price = 150m, Stock = new Stock { Quantity = 0 } },
+            new Book { BookName = "Gamma", AuthorName = "Other Author", GenreId = genreId, Price = 300m, Stock = new Stock { Quantity = 4 } });
+        await _db.SaveChangesAsync();
+
+        var result = await new HomeRepository(_db).SearchBooks(filters: new CatalogSearchFilters
+        {
+            GenreIds = [genreId], Author = "Selected", MinPrice = 200m, InStock = true, Sort = "price-desc"
+        });
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal("Alpha", item.BookName);
+        Assert.Equal(250m, item.Price);
+    }
+    [Theory] [InlineData(999,0)] [InlineData(998,40)] [InlineData(1000,0)]
     public void ShippingThreshold_IsConsistent(int total, int shipping) =>
         Assert.Equal((decimal)shipping, CartPricing.Quote(total, null).Shipping);
     [Fact] public void Discount_IsRoundedAndInvalidCouponsRejected()

@@ -1,4 +1,5 @@
 using BookShoppingCart.Models.Models.DTOs;
+using BookShoppingCart.Models.Models;
 using BookStoreCore.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -32,5 +33,5 @@ public sealed class CustomersController(UserManager<IdentityUser> users, ICurren
 public sealed class PaymentMethodsController : ControllerBase
 {
     [HttpGet, AllowAnonymous]
-    public PaymentMethodResponse[] Get() => [new("cash", "Cash on delivery")];
+    public PaymentMethodResponse[] Get() => CheckoutPaymentMethods.Available;
 }

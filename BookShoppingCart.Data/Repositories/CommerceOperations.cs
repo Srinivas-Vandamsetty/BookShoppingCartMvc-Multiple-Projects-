@@ -22,13 +22,13 @@ public sealed class CommerceOperations(ApplicationDbContext db, ICurrentUser use
         .Include(b => b.Stock).SingleOrDefaultAsync(b => b.Id == id && !b.IsArchived, ct);
     public Task<Order?> FindOrder(int id, CancellationToken ct) => db.Orders.AsNoTracking()
         .Include(o => o.OrderStatus).Include(o => o.OrderDetail).ThenInclude(d => d.Book).ThenInclude(b => b.Genre)
-        .SingleOrDefaultAsync(o => o.Id == id && !o.IsDeleted && (user.IsAdmin || o.UserId == user.UserId), ct);
+        .SingleOrDefaultAsync(o => o.Id == id && !o.IsDeleted && (user.CanManageOrders || o.UserId == user.UserId), ct);
     public Task<Order> FindCheckout(Guid key, CancellationToken ct) => db.Orders.AsNoTracking()
         .SingleAsync(o => o.UserId == user.UserId && o.CheckoutKey == key, ct);
 
     public async Task<List<Order>> SearchOrders(int page, bool admin, string? status, string? search, CancellationToken ct)
     {
-        if (admin) RequireAdmin();
+        if (admin) RequireOrderManager();
         var query = db.Orders.AsNoTracking().Where(o => !o.IsDeleted);
         if (!admin) { var owner = user.UserId; query = query.Where(o => o.UserId == owner); }
         if (!string.IsNullOrWhiteSpace(status)) query = query.Where(o => o.OrderStatus.StatusName == status);
@@ -114,10 +114,15 @@ public sealed class CommerceOperations(ApplicationDbContext db, ICurrentUser use
         if (!user.IsAdmin) throw new UnauthorizedAccessException("Administrator access required.");
     }
 
+    private void RequireOrderManager()
+    {
+        if (!user.CanManageOrders) throw new UnauthorizedAccessException("Order-management access required.");
+    }
+
     private async Task AuditAsync<T>(string kind, int id, Guid operationId, string reason, T request,
         Func<Task<(string Before, string After)>> mutate, CancellationToken ct)
     {
-        RequireAdmin();
+        RequireOrderManager();
         if (id <= 0 || operationId == Guid.Empty || string.IsNullOrWhiteSpace(reason) || reason.Length > 300)
             throw new ArgumentException("A valid target, operation ID, and reason are required.");
         var actor = user.UserId;

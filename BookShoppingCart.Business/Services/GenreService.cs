@@ -4,6 +4,7 @@ namespace BookShoppingCart.Business.Services;
 public class GenreService(IGenreRepository genres) : IGenreService
 {
     public Task<IEnumerable<Genre>> GetGenres() => genres.GetAllAsync();
+    public Task<IEnumerable<Genre>> GetGenresWithBookCounts() => genres.GetAllWithBookCounts();
     public Task<Genre?> GetGenreById(int id)
     {
         if (id <= 0) throw new ArgumentException("Invalid genre id.");
@@ -40,7 +41,9 @@ public class GenreService(IGenreRepository genres) : IGenreService
     {
         if (id <= 0) throw new ArgumentException("Invalid genre id.");
         var genre = await genres.GetByIdAsync(id) ?? throw new InvalidOperationException("Genre not found.");
-        if (await genres.HasBooks(id)) throw new InvalidOperationException("This genre is linked to existing books and cannot be deleted.");
+        var bookCount = await genres.GetBookCount(id);
+        if (bookCount > 0)
+            throw new InvalidOperationException($"This genre is used by {bookCount} book(s) and cannot be deleted. Move or delete those books first.");
         await genres.DeleteAsync(genre);
     }
 }

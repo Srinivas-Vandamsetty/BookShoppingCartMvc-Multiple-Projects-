@@ -6,4 +6,6 @@ public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
     public string UserId => accessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier)
         ?? throw new UnauthorizedAccessException("Please sign in.");
     public bool IsAdmin => accessor.HttpContext?.User.IsInRole("Admin") == true;
+    public bool IsEmployee => accessor.HttpContext?.User.IsInRole("Employee") == true;
+    public bool CanManageOrders => IsAdmin || IsEmployee;
 }

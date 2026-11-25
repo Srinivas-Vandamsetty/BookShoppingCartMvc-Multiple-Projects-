@@ -6,17 +6,21 @@
     <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>BookVerse- Online book store</title>
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('bookverse-theme') || 'light'; } catch { document.documentElement.dataset.theme = 'light'; }</script>
 
     <!-- Bootstrap and custom CSS -->
     <link href="@Url.Content("~/css/bootstrap.min.css")" rel="stylesheet" />
-    <link href="@Url.Content("~/css/styles.css")" rel="stylesheet" />
+    <link href="@Url.Content("~/css/styles.css")" rel="stylesheet" asp-append-version="true" />
     <link href="@Url.Content("~/css/footer.css")" rel="stylesheet" />
+    <link href="~/css/account-settings.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/order-history.css" rel="stylesheet" asp-append-version="true" />
     <link href="@Url.Content("~/css/bookCart.css")" rel="stylesheet" />
+    <link href="~/css/theme.css" rel="stylesheet" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
 
 </head>
-<body>
+<body data-theme-default="light">
 
     <!-- Include Navbar -->
     <partial name="_Navbar" />
@@ -37,6 +41,8 @@
     <!-- JavaScript Files -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/cart.js"></script>
+    <script src="/js/header-search.js"></script>
+    <script src="/js/theme-toggle.js" asp-append-version="true"></script>
 
     <!-- Additional Page-Specific Scripts -->
     <script src="~/Identity/lib/jquery/dist/jquery.min.js"></script>

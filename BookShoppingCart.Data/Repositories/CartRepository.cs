@@ -130,8 +130,7 @@ IF @result < 0 THROW 51000, 'Cart is busy. Please retry.', 1;");
     {
         ArgumentNullException.ThrowIfNull(model);
         Validator.ValidateObject(model, new ValidationContext(model), true);
-        if (!string.Equals(model.PaymentMethod, "cash", StringComparison.OrdinalIgnoreCase))
-            throw new NotSupportedException("Electronic payments are unavailable until a verified payment provider is configured.");
+        var paymentMethod = CheckoutPaymentMethods.Normalize(model.PaymentMethod);
         if (model.CheckoutKey == Guid.Empty) throw new ArgumentException("Checkout key is required.");
         var userId = currentUser.UserId;
         await using var tx = await db.Database.BeginTransactionAsync();
@@ -158,13 +157,15 @@ IF @result < 0 THROW 51000, 'Cart is busy. Please retry.', 1;");
                 (d.BookId, d.Quantity, books[d.BookId].Price))))
             throw new InvalidOperationException("Cart prices changed. Please review the updated total.");
         var quote = CartPricing.Quote(lines.Sum(d => books[d.BookId].Price * d.Quantity), model.CouponCode);
+        var payment = CheckoutPaymentMethods.AuthorizeSandbox(model, quote.Total);
+        if (!payment.IsSuccess) throw new InvalidOperationException("Payment could not be authorized.");
         var pending = await db.OrderStatuses.SingleOrDefaultAsync(s => s.StatusName == "Pending")
             ?? throw new InvalidOperationException("Order statuses are not initialized.");
         var order = new Order
         {
             UserId = userId, CheckoutKey = model.CheckoutKey, Name = model.Name.Trim(),
             Email = model.Email.Trim(), MobileNumber = model.MobileNumber.Trim(), Address = model.Address.Trim(),
-            PaymentMethod = "cash", IsPaid = false, OrderStatusId = pending.Id,
+            PaymentMethod = paymentMethod, IsPaid = paymentMethod != CheckoutPaymentMethods.Cash, OrderStatusId = pending.Id,
             Subtotal = quote.Subtotal, Discount = quote.Discount, Shipping = quote.Shipping,
             Total = quote.Total, CouponCode = model.CouponCode?.Trim().ToUpperInvariant()
         };

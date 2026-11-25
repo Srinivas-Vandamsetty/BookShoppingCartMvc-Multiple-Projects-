@@ -72,6 +72,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<BookStoreCore.Security.ICurrentUser, ApiCurrentUser>();
 builder.Services.AddScoped<CommerceOperations>();
+builder.Services.AddScoped<AdminDashboardService>();
 builder.Services.AddScoped<CartRepository>();
 builder.Services.AddScoped<ICartRepository>(services => services.GetRequiredService<CartRepository>());
 builder.Services.AddScoped<ICartService, CartService>();

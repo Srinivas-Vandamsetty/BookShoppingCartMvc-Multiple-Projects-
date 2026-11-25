@@ -1,48 +1,72 @@
-<!-- Navigation Bar -->
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <div class="container-fluid">
-        <!-- Logo and Home Link -->
-        <a class="navbar-brand me-4" href="@Url.Action("Index", "FrontPage")">
-            <img src="@(Url.Content("~/images/BookLogo.png"))" alt="Bookverse Logo" style="height: 80px;">
-        </a>
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var showHeaderSearch = !string.Equals(controller, "Home", StringComparison.OrdinalIgnoreCase) ||
+                           !string.Equals(action, "Index", StringComparison.OrdinalIgnoreCase);
+}
+<header class="bookverse-site-header">
+    <nav class="navbar navbar-expand-xl navbar-dark bookverse-navbar">
+        <div class="container-fluid bookverse-navbar__container">
+            <a class="navbar-brand bookverse-brand" href="@Url.Action("Index", "FrontPage")">
+                <img src="@(Url.Content("~/images/BookLogo.png"))" alt="BookVerse home">
+            </a>
 
-        <!-- Responsive Toggle Button -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <!-- Navigation Links -->
-        <div class="collapse navbar-collapse" id="navbarColor01">
-            <ul class="navbar-nav mx-auto">
-                <li class="nav me-1">
-                    <a class="nav-link text-white" asp-controller="Home" asp-action="Index">Books</a>
-                </li>
-                <li class="nav-item me-1">
-                    <a class="nav-link text-white" asp-controller="FrontPage" asp-action="AboutUs"> About</a>
-                </li>
-                <li class="nav-item me-1">
-                    <a class="nav-link text-white" asp-controller="FrontPage" asp-action="Shop"> Shop</a>
-                </li>
-                <li class="nav-item me-1">
-                    <a class="nav-link text-white" asp-controller="FrontPage" asp-action="Contact">Contact</a>
-                </li>
-            </ul>
-
-            <div class="d-lg-flex flex-grow-1">
-                <ul class="navbar-nav me-auto">
+            <div class="collapse navbar-collapse" id="navbarColor01">
+                <ul class="navbar-nav bookverse-nav-links">
+                    <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Index">Books</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="FrontPage" asp-action="AboutUs">About</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="FrontPage" asp-action="Shop">Shop</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="FrontPage" asp-action="Contact">Contact</a></li>
                     @if (User.IsInRole(Roles.Admin.ToString()))
                     {
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="/AdminOperations/Dashboard">Dashboard</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="/AdminOperations/Dashboard">Dashboard</a></li>
+                    }
+                    else if (User.IsInRole("Employee"))
+                    {
+                        <li class="nav-item"><a class="nav-link" asp-controller="AdminOperations" asp-action="AllOrders">Orders</a></li>
                     }
                 </ul>
 
-                <!-- User Authentication (Login/Logout) -->
-                <div class="ms-auto">
+                <div class="bookverse-navbar__actions">
+                    @if (showHeaderSearch)
+                    {
+                        <div class="bookverse-search" data-book-search>
+                            <button type="button" class="bookverse-icon-button bookverse-search__toggle" aria-label="Search books" aria-expanded="false" aria-controls="bookSearchPanel">
+                                <i class="bi bi-search"></i>
+                            </button>
+                            <div id="bookSearchPanel" class="bookverse-search__panel" hidden>
+                                <label class="visually-hidden" for="headerBookSearch">Search books</label>
+                                <input id="headerBookSearch" class="bookverse-search__input" type="search" autocomplete="off" placeholder="Search books or authors" aria-autocomplete="list" aria-controls="bookSearchSuggestions">
+                                <div id="bookSearchSuggestions" class="bookverse-search__suggestions" role="listbox" aria-label="Book suggestions"></div>
+                            </div>
+                        </div>
+                    }
+                    <button type="button" class="bookverse-icon-button bookverse-theme-toggle" data-theme-toggle aria-label="Switch to dark mode" title="Switch to dark mode" aria-pressed="false">
+                        <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+                    </button>
                     <partial name="_LoginPartial" />
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form class="bookverse-header-logout" asp-controller="Auth" asp-action="Logout" asp-route-returnUrl="@Url.Action("Index", "FrontPage", new { area = "" })">
+                            <button type="submit" class="btn bookverse-login-button">Logout</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a class="btn bookverse-login-button" asp-controller="Auth" asp-action="Login">Login</a>
+                    }
                 </div>
             </div>
         </div>
+    </nav>
+
+    <div class="bookverse-shipping-bar" role="status">
+        <span></span>
+        <p><i class="bi bi-truck"></i> Free shipping on orders over ₹999</p>
+        <span></span>
     </div>
-</nav>
+</header>

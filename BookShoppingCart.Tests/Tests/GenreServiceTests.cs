@@ -182,6 +182,18 @@ namespace BookShoppingCart.Tests.Tests
         }
 
         [Fact]
+        public async Task DeleteGenre_WithLinkedBooks_IsRejected()
+        {
+            _genreRepoMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(new Genre { Id = 1, GenreName = "Fiction" });
+            _genreRepoMock.Setup(r => r.GetBookCount(1)).ReturnsAsync(3);
+
+            var error = await Assert.ThrowsAsync<InvalidOperationException>(() => _genreService.DeleteGenre(1));
+
+            Assert.Contains("3 book", error.Message);
+            _genreRepoMock.Verify(r => r.DeleteAsync(It.IsAny<Genre>()), Times.Never);
+        }
+
+        [Fact]
         public async Task RenameToDuplicate_IsRejectedBeforePersistence()
         {
             _genreRepoMock.Setup(r=>r.NameExists("Existing", 2)).ReturnsAsync(true);

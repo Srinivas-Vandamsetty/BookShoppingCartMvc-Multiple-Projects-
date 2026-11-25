@@ -3,15 +3,15 @@
     Layout = "_AdminLayout";
 }
 
-<div class="container my-4" style="max-width: 600px;">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="text--bs-gray-dark fw-bold">📦 Manage Stock</h2>
+<section class="admin-page admin-page--form">
+    <div class="admin-page__header">
+        <div><h1><i class="bi bi-box-seam"></i>Manage stock</h1><p>Record an inventory adjustment with an audit reason.</p></div>
         <a asp-action="Index" asp-controller="Stock" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Back
         </a>
     </div>
 
-    <form asp-action="ManangeStock" class="shadow-lg p-4 bg-white rounded-4" style="box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);">
+    <form asp-action="ManangeStock" class="shadow-lg">
         <input type="hidden" asp-for="BookId" />
         <input type="hidden" asp-for="ExpectedQuantity" />
         <input type="hidden" asp-for="OperationId" />
@@ -34,6 +34,6 @@
             </button>
         </div>
     </form>
-</div>
+</section>
 
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -22,13 +22,15 @@ namespace BookShoppingCartMvcUI.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<IdentityUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
         public RegisterModel(
             UserManager<IdentityUser> userManager,
             IUserStore<IdentityUser> userStore,
             SignInManager<IdentityUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _userStore = userStore;
@@ -36,6 +38,7 @@ namespace BookShoppingCartMvcUI.Areas.Identity.Pages.Account
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _roleManager = roleManager;
         }
 
         /// <summary>
@@ -121,7 +124,12 @@ namespace BookShoppingCartMvcUI.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
-                    var roleResult = await _userManager.AddToRoleAsync(user, Roles.User.ToString());
+                    if (!await _roleManager.RoleExistsAsync(Roles.Customer.ToString()))
+                    {
+                        var createRole = await _roleManager.CreateAsync(new IdentityRole(Roles.Customer.ToString()));
+                        if (!createRole.Succeeded) throw new InvalidOperationException("Customer role initialization failed.");
+                    }
+                    var roleResult = await _userManager.AddToRoleAsync(user, Roles.Customer.ToString());
                     if (!roleResult.Succeeded) throw new InvalidOperationException("User role initialization failed.");
                     _logger.LogInformation("User registered; awaiting email confirmation.");
                     var token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(

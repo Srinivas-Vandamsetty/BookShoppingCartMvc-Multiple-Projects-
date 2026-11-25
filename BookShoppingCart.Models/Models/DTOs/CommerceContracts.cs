@@ -53,6 +53,23 @@ public sealed class CustomerProfileRequest { [Phone, StringLength(30)] public st
 public sealed record AvailabilityResponse(int BookId, int AvailableQuantity, int MaxPurchaseQuantity, bool InStock);
 public sealed record PaymentMethodResponse(string Code, string Name);
 
+public sealed record AdminDashboardResponse(
+    int OrderCount,
+    decimal PaidSales,
+    int BookCount,
+    int CustomerCount,
+    decimal OrderChangePercent,
+    decimal SalesChangePercent,
+    int LowStockCount,
+    List<DashboardRevenuePoint> Revenue,
+    List<DashboardCategoryMetric> Categories,
+    List<DashboardRecentOrder> RecentOrders);
+
+public sealed record DashboardRevenuePoint(DateTime Date, decimal Revenue);
+public sealed record DashboardCategoryMetric(string Category, decimal Sales, decimal SharePercent);
+public sealed record DashboardRecentOrder(int OrderId, string CustomerName, int ItemCount, decimal Total,
+    string PaymentMethod, bool IsPaid, string Status, DateTime CreatedAtUtc);
+
 public sealed record CommercePage<T>(List<T> Items, int Page, bool HasNext)
 {
     public static CommercePage<T> From(IEnumerable<T> source, int page)

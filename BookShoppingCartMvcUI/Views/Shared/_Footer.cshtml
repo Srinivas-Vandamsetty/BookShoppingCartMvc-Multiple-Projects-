@@ -1,40 +1,76 @@
-<footer class="custom-footer py-5">
-    <div class="container">
-        <div class="row gy-4">
-            <div class="col-md-3">
-                <h5>About Us</h5>
-                <p>We provide an extensive collection of books to meet your reading needs.</p>
-            </div>
-            <div class="col-md-3">
-                <h5>Get in Touch</h5>
-                <p>229/A, Madhapur, Hyderabad, Telangana.</p>
-                <p>Email: support@bookverse.com</p>
-                <p>Phone: +91 7416923487</p>
-            </div>
-            <div class="col-md-3">
-                <h5>Pages</h5>
-                <ul class="list-unstyled">
-                    <li><a class="nav-link p-0" asp-controller="Home" asp-action="Index">Books</a></li>
-                    <li><a class="nav-link p-0 " asp-controller="FrontPage" asp-action="AboutUs">About</a></li>
-                    <li><a class="nav-link p-0" asp-controller="FrontPage" asp-action="Shop">Shop</a></li>
-                    <li><a class="nav-link p-0" asp-controller="FrontPage" asp-action="Contact">Contact</a></li>
-                </ul>
-            </div>
-            <div class="col-md-3">
-                <h5>Subscribe</h5>
-                <p>Visit our catalog for the latest books.</p>
-                <p>Newsletter subscriptions are currently unavailable.</p>
-            </div>
+<footer class="bookverse-footer">
+    <div class="bookverse-footer__container">
+        <div class="bookverse-footer__content">
+            <section class="bookverse-footer__brand" aria-label="About BookVerse">
+                <a class="bookverse-footer__logo" asp-controller="Home" asp-action="Index" aria-label="BookVerse home"><i class="bi bi-book-half" aria-hidden="true"></i><span>Book<span>Verse</span></span></a>
+                <p>Your online bookstore for every kind of reader.</p>
+                <div class="bookverse-footer__social" aria-label="BookVerse social channels">
+                    <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="BookVerse on Facebook"><i class="fab fa-facebook-f" aria-hidden="true"></i></a>
+                    <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="BookVerse on Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+                    <a href="https://x.com/" target="_blank" rel="noopener noreferrer" aria-label="BookVerse on X"><i class="fab fa-twitter" aria-hidden="true"></i></a>
+                    <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="BookVerse on YouTube"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+                    <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="BookVerse on LinkedIn"><i class="fab fa-linkedin-in" aria-hidden="true"></i></a>
+                </div>
+            </section>
+
+            <nav class="bookverse-footer__column" aria-label="Explore BookVerse">
+                <h2>Explore</h2>
+                <a asp-controller="Home" asp-action="Index">Browse Books</a>
+                <a asp-controller="FrontPage" asp-action="Shop">Shop</a>
+                <a asp-controller="FrontPage" asp-action="AboutUs">About Us</a>
+                <a asp-controller="FrontPage" asp-action="Contact">Contact</a>
+            </nav>
+
+            <nav class="bookverse-footer__column" aria-label="BookVerse help">
+                <h2>Help</h2>
+                <a asp-controller="FrontPage" asp-action="Contact">Contact Support</a>
+                <a asp-controller="FrontPage" asp-action="Shop">Shipping &amp; Delivery</a>
+                <a asp-controller="Home" asp-action="Privacy">Privacy Policy</a>
+                <a asp-controller="FrontPage" asp-action="AboutUs">About BookVerse</a>
+            </nav>
+
+            <address class="bookverse-footer__column bookverse-footer__contact">
+                <h2>Get in touch</h2>
+                <a href="tel:+917416923487"><i class="bi bi-telephone" aria-hidden="true"></i><span>+91 7416923487</span></a>
+                <a href="mailto:support@bookverse.com"><i class="bi bi-envelope" aria-hidden="true"></i><span>support@bookverse.com</span></a>
+                <p><i class="bi bi-geo-alt" aria-hidden="true"></i><span>229/A, Madhapur,<br />Hyderabad, Telangana.</span></p>
+            </address>
+
+            <section class="bookverse-footer__newsletter" aria-labelledby="footer-newsletter-title">
+                <h2 id="footer-newsletter-title">Newsletter</h2>
+                <p>Get book recommendations, new releases, and exclusive deals.</p>
+                <form id="footerNewsletterForm" class="bookverse-footer__newsletter-form" novalidate>
+                    <label class="visually-hidden" for="footerNewsletterEmail">Email address</label>
+                    <input id="footerNewsletterEmail" type="email" autocomplete="email" placeholder="Enter your email" required />
+                    <button type="submit" aria-label="Join newsletter"><i class="bi bi-send" aria-hidden="true"></i></button>
+                </form>
+                <label class="bookverse-footer__opt-in" for="footerNewsletterOptIn"><input id="footerNewsletterOptIn" type="checkbox" /><span>Send me updates and offers</span></label>
+                <p id="footerNewsletterMessage" class="bookverse-footer__newsletter-message" role="status" aria-live="polite"></p>
+            </section>
         </div>
 
-        <div class="footer-bottom text-center mt-4 pt-3">
-            <p>© 2025 All Rights Reserved | Designed by <a href="/Home">Bookverse</a></p>
-            <div class="social-icons mt-2">
-                <a href="https://www.facebook.com/"><i class="fab fa-facebook-f me-2"></i></a>
-                <a href="https://x.com/i/flow/login"><i class="fab fa-twitter me-2"></i></a>
-                <a href="https://www.instagram.com/accounts/login/"><i class="fab fa-instagram me-2"></i></a>
-                <a href="https://www.linkedin.com/"><i class="fab fa-linkedin"></i></a>
-            </div>
+        <div class="bookverse-footer__bottom">
+            <p>&copy; @DateTime.UtcNow.Year BookVerse. All rights reserved.</p>
+            <nav aria-label="Legal links">
+                <a asp-controller="Home" asp-action="Privacy">Privacy Policy</a><span aria-hidden="true">|</span>
+                <a asp-controller="FrontPage" asp-action="Contact">Terms of Service</a><span aria-hidden="true">|</span>
+                <a asp-controller="FrontPage" asp-action="Contact">Cookie Preferences</a>
+            </nav>
         </div>
     </div>
 </footer>
+
+<script>
+    (() => {
+        const form = document.getElementById('footerNewsletterForm');
+        const email = document.getElementById('footerNewsletterEmail');
+        const message = document.getElementById('footerNewsletterMessage');
+        if (!form || !email || !message) return;
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            message.textContent = email.validity.valid
+                ? 'Thanks for your interest. Newsletter subscriptions are coming soon.'
+                : 'Enter a valid email address to continue.';
+        });
+    })();
+</script>

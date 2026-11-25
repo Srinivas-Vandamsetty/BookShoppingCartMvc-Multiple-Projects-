@@ -1,42 +1,89 @@
-﻿.custom-footer {
-    background-color: #051922;
-    color: #ffffff;
+.bookverse-footer {
+    --footer-surface: #12141c;
+    --footer-surface-deep: #090c13;
+    --footer-text: #f8f8fb;
+    --footer-muted: #c7c8d0;
+    --footer-line: rgba(255, 255, 255, .28);
+    --footer-orange: #ff7900;
+    background: radial-gradient(circle at 90% 10%, rgba(255, 111, 0, .16), transparent 29rem), radial-gradient(circle at 7% 80%, rgba(76, 82, 111, .14), transparent 23rem), linear-gradient(135deg, var(--footer-surface), var(--footer-surface-deep));
+    color: var(--footer-text);
+    margin-top: 3rem;
+    padding: clamp(2rem, 4vw, 4.5rem) clamp(1rem, 2.4vw, 2.5rem) 1.8rem;
 }
 
-    .custom-footer h5 {
-        color: #f39c12;
-        border-bottom: 2px solid #f39c12;
-        display: inline-block;
-        padding-bottom: 5px;
-        margin-bottom: 15px;
-    }
+.bookverse-footer__container { margin: 0 auto; max-width: 1600px; }
 
-    .custom-footer a {
-        color: #ffffff;
-        text-decoration: none;
-    }
-
-        .custom-footer a:hover {
-            color: #f39c12;
-        }
-
-.subscribe-form button {
-    background-color: #f39c12;
-    color: white;
+.bookverse-footer__cta {
+    align-items: center;
+    background: radial-gradient(ellipse at 62% 155%, rgba(255, 120, 0, .8), transparent 44%), linear-gradient(105deg, #542821 0%, #2a2026 40%, #a63307 100%);
+    border: 1px solid rgba(255, 160, 83, .75);
+    border-radius: clamp(1.25rem, 2.5vw, 2.7rem);
+    box-shadow: 0 1.25rem 3.5rem rgba(0, 0, 0, .3);
+    display: grid;
+    gap: clamp(1rem, 2.5vw, 2.5rem);
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: 13.5rem;
+    overflow: hidden;
+    padding: clamp(1.5rem, 3vw, 3.8rem);
+    position: relative;
 }
 
-    .subscribe-form button:hover {
-        background-color: #d68910;
-    }
+.bookverse-footer__cta::after { background: linear-gradient(115deg, transparent, rgba(255, 138, 0, .32), transparent); bottom: -75%; content: ""; height: 105%; left: 27%; position: absolute; transform: rotate(-7deg); width: 78%; }
+.bookverse-footer__cta-icon, .bookverse-footer__cta-copy, .bookverse-footer__cta-link { position: relative; z-index: 1; }
+.bookverse-footer__cta-icon { align-items: center; border-right: 1px solid rgba(255, 255, 255, .7); color: #ff8e1a; display: flex; font-size: clamp(3.75rem, 6vw, 6rem); line-height: 1; padding-right: clamp(1rem, 2.5vw, 2.7rem); }
+.bookverse-footer__cta h2 { color: #fff; font-size: clamp(2rem, 4.1vw, 4.1rem); font-weight: 800; letter-spacing: -.045em; line-height: 1.08; margin: 0; }
 
-.footer-bottom {
-    border-top: 1px solid #444;
+.bookverse-footer__cta-link {
+    background: linear-gradient(135deg, #ff981e, #f15a00);
+    border: 1px solid rgba(255, 208, 152, .45);
+    border-radius: 1.1rem;
+    box-shadow: 0 .75rem 1.5rem rgba(60, 13, 0, .28);
+    color: #fff !important;
+    font-size: clamp(1rem, 1.5vw, 1.45rem);
+    font-weight: 800;
+    padding: 1.15rem 1.5rem;
+    text-align: center;
+    text-decoration: none;
+    transition: transform .2s ease, filter .2s ease;
+    white-space: nowrap;
 }
 
-    .footer-bottom .social-icons a {
-        color: white;
-    }
+.bookverse-footer__cta-link:hover { filter: brightness(1.08); transform: translateY(-2px); }
+.bookverse-footer__content { display: grid; gap: 2rem; grid-template-columns: 1.25fr .7fr .85fr 1.1fr 1.25fr; padding: clamp(2.5rem, 5vw, 5rem) 1.15rem 2.7rem; }
+.bookverse-footer__brand, .bookverse-footer__column, .bookverse-footer__newsletter { min-width: 0; }
+.bookverse-footer__column, .bookverse-footer__newsletter { border-left: 1px solid var(--footer-line); padding-left: clamp(1.25rem, 2.2vw, 2.35rem); }
 
-        .footer-bottom .social-icons a:hover {
-            color: #f39c12;
-        }
+.bookverse-footer__logo { align-items: center; color: #fff; display: inline-flex; font-size: clamp(2rem, 2.8vw, 3rem); font-weight: 800; gap: .65rem; letter-spacing: -.055em; text-decoration: none; }
+.bookverse-footer__logo > i { color: var(--footer-orange); font-size: 1.15em; }
+.bookverse-footer__logo span span, .bookverse-footer h2 { color: var(--footer-orange); }
+.bookverse-footer__brand > p { color: var(--footer-muted); font-size: 1.05rem; line-height: 1.5; margin: 1.15rem 0 1.8rem; max-width: 18rem; }
+.bookverse-footer h2 { font-size: clamp(1.15rem, 1.6vw, 1.55rem); font-weight: 800; margin: 0 0 1.1rem; }
+.bookverse-footer__column { display: flex; flex-direction: column; gap: .8rem; }
+.bookverse-footer__column a, .bookverse-footer__bottom a { color: var(--footer-text); text-decoration: none; transition: color .2s ease; }
+.bookverse-footer__column a:hover, .bookverse-footer__bottom a:hover { color: var(--footer-orange); }
+
+.bookverse-footer__social { display: flex; flex-wrap: wrap; gap: .65rem; }
+.bookverse-footer__social a { align-items: center; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .12); border-radius: 50%; color: #fff; display: inline-flex; font-size: 1.05rem; height: 2.7rem; justify-content: center; text-decoration: none; transition: background-color .2s ease, color .2s ease, transform .2s ease; width: 2.7rem; }
+.bookverse-footer__social a:hover { background: var(--footer-orange); color: #fff; transform: translateY(-2px); }
+.bookverse-footer__contact { font-style: normal; }
+.bookverse-footer__contact a, .bookverse-footer__contact p { align-items: flex-start; display: flex; gap: .8rem; line-height: 1.45; margin: 0; }
+.bookverse-footer__contact i { color: var(--footer-orange); flex: 0 0 auto; font-size: 1.2rem; margin-top: .1rem; }
+
+.bookverse-footer__newsletter > p { color: var(--footer-muted); line-height: 1.45; margin: 0 0 1rem; }
+.bookverse-footer__newsletter-form { display: flex; margin-bottom: 1rem; }
+.bookverse-footer__newsletter-form input { background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .36); border-radius: .85rem 0 0 .85rem; color: #fff; min-width: 0; outline: 0; padding: .85rem 1rem; width: 100%; }
+.bookverse-footer__newsletter-form input::placeholder { color: #d1d1d6; }
+.bookverse-footer__newsletter-form input:focus { border-color: var(--footer-orange); box-shadow: 0 0 0 .2rem rgba(255, 121, 0, .17); }
+.bookverse-footer__newsletter-form button { background: linear-gradient(135deg, #ff971d, #f15b00); border: 0; border-radius: 0 .85rem .85rem 0; color: #fff; font-size: 1.35rem; padding: 0 1.05rem; }
+.bookverse-footer__opt-in { align-items: center; color: var(--footer-muted); cursor: pointer; display: flex; font-size: .9rem; gap: .65rem; }
+.bookverse-footer__opt-in input { accent-color: var(--footer-orange); height: 1.1rem; width: 1.1rem; }
+.bookverse-footer__newsletter-message { color: #ffb870 !important; font-size: .82rem; margin-top: .65rem !important; min-height: 1.2rem; }
+
+.bookverse-footer__bottom { align-items: center; border-top: 1px solid var(--footer-line); color: var(--footer-muted); display: flex; font-size: .95rem; justify-content: space-between; padding-top: 1.75rem; }
+.bookverse-footer__bottom p { margin: 0; }
+.bookverse-footer__bottom nav { display: flex; flex-wrap: wrap; gap: 1.4rem; }
+html[data-theme="dark"] .bookverse-footer { --footer-surface: #0a1020; --footer-surface-deep: #030711; }
+
+@media (max-width: 1199px) { .bookverse-footer__content { grid-template-columns: 1.3fr 1fr 1fr; } .bookverse-footer__newsletter { grid-column: span 2; } .bookverse-footer__brand { grid-row: span 2; } }
+@media (max-width: 767px) { .bookverse-footer { margin-top: 2rem; padding: 1.25rem 1rem; } .bookverse-footer__cta { grid-template-columns: 1fr; min-height: 0; text-align: center; } .bookverse-footer__cta-icon { border-bottom: 1px solid rgba(255, 255, 255, .65); border-right: 0; justify-content: center; padding: 0 0 1rem; } .bookverse-footer__cta-link { width: 100%; } .bookverse-footer__content { grid-template-columns: 1fr 1fr; padding: 2.5rem 0; } .bookverse-footer__brand { grid-column: span 2; grid-row: auto; } .bookverse-footer__column:first-of-type { border-left: 0; padding-left: 0; } .bookverse-footer__newsletter { grid-column: span 2; } .bookverse-footer__bottom { align-items: flex-start; flex-direction: column; gap: 1rem; } }
+@media (max-width: 480px) { .bookverse-footer__content { grid-template-columns: 1fr; gap: 2rem; } .bookverse-footer__brand, .bookverse-footer__newsletter { grid-column: auto; } .bookverse-footer__column, .bookverse-footer__newsletter { border-left: 0; border-top: 1px solid var(--footer-line); padding-left: 0; padding-top: 1.75rem; } .bookverse-footer__bottom nav { gap: .7rem; } }

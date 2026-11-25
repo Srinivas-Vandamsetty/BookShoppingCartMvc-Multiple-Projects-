@@ -29,12 +29,12 @@ public class CatalogClientTests
         clients.Setup(c=>c.CreateClient("Catalog")).Returns(client);
         var controller = new HomeController(clients.Object,NullLogger<HomeController>.Instance);
         const string search = "C# & programming";
-        var result = Assert.IsType<ViewResult>(await controller.Index(search,4,page));
+        var result = Assert.IsType<ViewResult>(await controller.Index(sTerm: search, genreIds: [4], page: page));
         Assert.IsType<BookDisplayModel>(result.Model);
         var uri = Assert.Single(handler.Requests,u=>u.AbsolutePath.EndsWith("GetBooksPage",StringComparison.Ordinal));
         var values = QueryHelpers.ParseQuery(uri.Query);
         Assert.Equal(search,values["sTerm"].ToString());
-        Assert.Equal("4",values["genreId"].ToString());
+        Assert.Equal("4",values["genreIds"].ToString());
         Assert.Equal("1",values["page"].ToString());
     }
 }

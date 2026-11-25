@@ -13,5 +13,8 @@ namespace BookShoppingCart.Models.Models
         [MaxLength(40)]
         public string GenreName { get; set; } = string.Empty;
         public List<Book> Books { get; set; } = [];
+
+        [NotMapped]
+        public int BookCount { get; set; }
     }
 }
