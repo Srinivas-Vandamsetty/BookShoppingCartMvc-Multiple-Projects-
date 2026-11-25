@@ -50,7 +50,8 @@ public sealed class CommerceFrontendTests
         await Redirect(minus);
         var review = await client.GetStringAsync("/Cart/Checkout?coupon=SAVE10");
         Assert.Contains("Cash on Delivery", review, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("230.00", review);
+        // Two ₹100 books with SAVE10 are ₹180; the ₹40 standard-delivery fee makes the quote ₹220.
+        Assert.Contains("220.00", review);
         using var placed = await Post(client, "/Cart/Checkout", review, new()
         {
             ["Name"] = "UI Reader", ["Email"] = FrontendAuthHarness.Email, ["MobileNumber"] = "9876543210",
@@ -62,7 +63,7 @@ public sealed class CommerceFrontendTests
         using var scope = app.Api.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var order = await db.Orders.SingleAsync();
-        Assert.Equal(230m, order.Total);
+        Assert.Equal(220m, order.Total);
         Assert.Contains("Paper Lanterns", await client.GetStringAsync("/UserOrder/UserOrders"));
         Assert.Contains("Order #" + order.Id, await client.GetStringAsync($"/UserOrder/Details/{order.Id}"));
         var profile = await client.GetStringAsync("/Identity/Account/Manage");

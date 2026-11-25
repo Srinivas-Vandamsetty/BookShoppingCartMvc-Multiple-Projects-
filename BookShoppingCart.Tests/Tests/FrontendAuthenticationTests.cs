@@ -195,7 +195,7 @@ public class FrontendAuthenticationTests
         using var login = await FrontendAuthHarness.Login(client, remember: true);
         Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
         Assert.Equal("/FrontPage/Index", login.Headers.Location!.ToString());
-        var cookie = login.Headers.GetValues("Set-Cookie").Single(c => c.Contains(".AspNetCore.Identity.Application="));
+        var cookie = login.Headers.GetValues("Set-Cookie").Single(c => c.Contains("BookVerse.Session="));
         Assert.Contains("secure", cookie); Assert.Contains("httponly", cookie); Assert.Contains("samesite=lax", cookie);
         Assert.Contains("expires=", cookie);
         var tokens = await app.StoredTokens();
