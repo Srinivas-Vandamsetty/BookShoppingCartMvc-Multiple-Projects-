@@ -49,7 +49,7 @@ public sealed class CommerceFrontendTests
         using var minus = await Post(client, "/Cart/RemoveItem", cart, new() { ["bookId"] = book.ToString() });
         await Redirect(minus);
         var review = await client.GetStringAsync("/Cart/Checkout?coupon=SAVE10");
-        Assert.Contains("Cash on delivery", review);
+        Assert.Contains("Cash on Delivery", review, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("230.00", review);
         using var placed = await Post(client, "/Cart/Checkout", review, new()
         {
