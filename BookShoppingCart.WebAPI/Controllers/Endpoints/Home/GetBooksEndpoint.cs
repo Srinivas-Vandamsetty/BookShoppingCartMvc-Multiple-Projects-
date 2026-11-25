@@ -19,7 +19,7 @@ public class GetBooksEndpoint(IHomeService home) : Endpoint<GetBooksRequest>
     }
     public override async Task HandleAsync(GetBooksRequest req, CancellationToken ct)
     {
-        var result = await home.SearchBooks(req.STerm, req.GenreId, req.Page, req.PageSize, ct);
+        var result = await home.SearchBooks(req.STerm, req.GenreId, req.Page, req.PageSize, ct: ct);
         HttpContext.Response.Headers["X-Total-Count"] = result.TotalCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
         // Retain the legacy list-shaped Book response; new clients can use GetBooksPage.
         var books = result.Items.Select(b => new Book

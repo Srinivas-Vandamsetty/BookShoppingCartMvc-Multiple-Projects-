@@ -3,25 +3,25 @@
     Layout = "_AdminLayout";
 }
 
-<div class="container my-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="fw-bold text--bs-gray-dark">📦 Stock Management</h2>
+<section class="admin-page">
+    <div class="admin-page__header">
+        <div><h1><i class="bi bi-box-seam"></i>Stock management</h1><p>Search books and keep inventory quantities accurate.</p></div>
     </div>
 
-    <form asp-action="Index" method="get" class="d-flex flex-wrap gap-2 mb-4">
-        <input type="text" name="sTerm" class="form-control w-25" placeholder="Search by book name..." />
-        <button type="submit" class="btn btn-warning">
+    <form asp-action="Index" method="get" class="admin-filter-bar">
+        <div class="filter-field"><label class="visually-hidden" for="stock-search">Search stock</label><input id="stock-search" type="text" name="sTerm" class="form-control" value="@Context.Request.Query["sTerm"]" placeholder="Search by book name..." /></div>
+        <div class="filter-actions"><button type="submit" class="btn btn-warning">
             <i class="bi bi-search"></i> Search
         </button>
         <a asp-action="Index" asp-controller="Stock" class="btn btn-secondary">
             <i class="bi bi-x-circle"></i> Clear
-        </a>
+        </a></div>
     </form>
 
     @if (Model?.Any() == true)
     {
         <div class="table-responsive">
-            <table class="table table-bordered table-hover shadow-sm bg-white rounded-3">
+            <table class="table admin-stock-table table-bordered table-hover">
                 <thead class="table-light">
                     <tr>
                         <th>Book</th>
@@ -33,11 +33,13 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td class="fw-medium">@item.BookName</td>
-                            <td>@item.Quantity</td>
+                            <td class="fw-medium"><span class="admin-stock-book"><i class="bi bi-book"></i>@item.BookName</span></td>
+                            <td>
+                                <span class="stock-count @(item.Quantity <= 5 ? "stock-count--low" : "stock-count--healthy")"><i class="bi bi-@(item.Quantity <= 5 ? "exclamation-triangle" : "check-circle")"></i> @item.Quantity @(item.Quantity == 1 ? "copy" : "copies")</span>
+                            </td>
                             <td>
                                 <a asp-action="ManangeStock" asp-controller="Stock" asp-route-bookId="@item.BookId"
-                                   class="btn btn-warning">
+                                   class="btn btn-warning btn-sm">
                                     <i class="bi bi-box-seam"></i> Update Stock
                                 </a>
                             </td>
@@ -53,6 +55,6 @@
             No stock records found. Try searching for another book.
         </div>
     }
-</div>
+</section>
 
 <partial name="_OrderPaging" />

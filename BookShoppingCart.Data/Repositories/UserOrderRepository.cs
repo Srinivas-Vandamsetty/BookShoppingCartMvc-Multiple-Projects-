@@ -10,9 +10,13 @@ public class UserOrderRepository(ApplicationDbContext db, ICurrentUser user) : I
     {
         if (!user.IsAdmin) throw new UnauthorizedAccessException("Administrator access required.");
     }
+    private void RequireOrderManager()
+    {
+        if (!user.CanManageOrders) throw new UnauthorizedAccessException("Order-management access required.");
+    }
     public async Task ChangeOrderStatus(UpdateOrderStatusModel data)
     {
-        RequireAdmin();
+        RequireOrderManager();
         if (data.OrderId <= 0 || data.OrderStatusId <= 0) throw new ArgumentException("Select a valid order and status.");
         var order = await db.Orders.SingleOrDefaultAsync(o => o.Id == data.OrderId) ?? throw new KeyNotFoundException("Order not found.");
         if (!await db.OrderStatuses.AnyAsync(s => s.Id == data.OrderStatusId)) throw new ArgumentException("Invalid order status.");
@@ -22,13 +26,13 @@ public class UserOrderRepository(ApplicationDbContext db, ICurrentUser user) : I
     public async Task<Order?> GetOrderById(int id)
     {
         var owner = user.UserId;
-        return await db.Orders.AsNoTracking().SingleOrDefaultAsync(o => o.Id == id && (user.IsAdmin || o.UserId == owner));
+        return await db.Orders.AsNoTracking().SingleOrDefaultAsync(o => o.Id == id && (user.CanManageOrders || o.UserId == owner));
     }
     public async Task<IEnumerable<OrderStatus>> GetOrderStatuses() =>
         await db.OrderStatuses.AsNoTracking().OrderBy(s => s.StatusId).ToListAsync();
     public async Task TogglePaymentStatus(int orderId)
     {
-        RequireAdmin();
+        RequireOrderManager();
         var order = await db.Orders.AsNoTracking().SingleOrDefaultAsync(o => o.Id == orderId) ?? throw new KeyNotFoundException("Order not found.");
         if (order.PaymentMethod != "cash") throw new InvalidOperationException("Electronic payment status must be verified by its provider.");
         var updated = await db.Orders.Where(o => o.Id == orderId && o.IsPaid == order.IsPaid)
@@ -37,7 +41,7 @@ public class UserOrderRepository(ApplicationDbContext db, ICurrentUser user) : I
     }
     public async Task<IEnumerable<Order>> UserOrders(bool getAll = false, int page = 1)
     {
-        if (getAll) RequireAdmin();
+        if (getAll) RequireOrderManager();
         if (page is < 1 or > 100000) throw new ArgumentException("Invalid page.");
         var owner = user.UserId;
         return await db.Orders.AsNoTracking().Where(o => !o.IsDeleted && (getAll || o.UserId == owner))

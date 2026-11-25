@@ -7,6 +7,7 @@ using BookShoppingCartMvcUI.Middleware;
 using BookShoppingCartMvcUI.Services;
 using BookStoreCore.Shared;
 using BookStoreCore.Security;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -56,11 +57,18 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 }).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultUI().AddDefaultTokenProviders();
-builder.Services.ConfigureApplicationCookie(options =>
+builder.Services.AddAuthentication(options =>
 {
+    options.DefaultAuthenticateScheme = BookVerseAuthenticationDefaults.Scheme;
+    options.DefaultChallengeScheme = BookVerseAuthenticationDefaults.Scheme;
+    options.DefaultSignInScheme = BookVerseAuthenticationDefaults.Scheme;
+}).AddCookie(BookVerseAuthenticationDefaults.Scheme, options =>
+{
+    options.Cookie.Name = "BookVerse.Session";
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Lax;
+    options.LoginPath = "/Auth/Login";
     options.SlidingExpiration = false;
     options.Events.OnValidatePrincipal = context => context.HttpContext.RequestServices
         .GetRequiredService<BrowserAuthenticationService>().ValidateCookieAsync(context);
@@ -107,9 +115,7 @@ builder.Services.AddRateLimiter(options =>
         _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
         { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
-builder.Services.AddRazorPages(options => options.Conventions.AddAreaPageApplicationModelConvention(
-    "Identity", "/Account/Login", model => model.EndpointMetadata.Add(
-        new Microsoft.AspNetCore.RateLimiting.EnableRateLimitingAttribute("Login"))));
+builder.Services.AddRazorPages();
 var app = builder.Build();
 // Initialization is explicit, never silently applied to a production database.
 if (builder.Configuration.GetValue<bool>("Database:Initialize") || args.Contains("--initialize-database", StringComparer.Ordinal))

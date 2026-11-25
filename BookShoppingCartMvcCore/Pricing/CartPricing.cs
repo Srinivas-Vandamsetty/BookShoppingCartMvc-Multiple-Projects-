@@ -18,7 +18,7 @@ public static class CartPricing
     {
         if (subtotal < 0) throw new ArgumentOutOfRangeException(nameof(subtotal));
         var discount = decimal.Round(subtotal * DiscountRate(coupon), 2, MidpointRounding.AwayFromZero);
-        var shipping = !hasItems || subtotal - discount >= FreeShippingThreshold ? 0m : 50m;
+        var shipping = !hasItems || subtotal - discount >= FreeShippingThreshold ? 0m : 40m;
         return new(subtotal, discount, shipping, subtotal - discount + shipping);
     }
 }

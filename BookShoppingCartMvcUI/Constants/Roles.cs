@@ -3,6 +3,7 @@
 // Enum representing user roles in the application
 public enum Roles
 {
-    User = 1,
+    Customer = 1,
+    Employee,
     Admin
 }

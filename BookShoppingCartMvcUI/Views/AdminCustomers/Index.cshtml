@@ -1,0 +1,66 @@
+@model IEnumerable<BookShoppingCartMvcUI.Models.AdminCustomerListItem>
+@{
+    Layout = "_AdminLayout";
+    var search = ViewBag.Search as string;
+}
+
+<section class="admin-page">
+    <div class="admin-page__header">
+        <div><h1><i class="bi bi-people"></i>Customers</h1><p>Manage customer contact details and account access.</p></div>
+    </div>
+
+    <form method="get" class="admin-filter-bar" role="search">
+        <div class="filter-field">
+            <label for="customerSearch">Search customers</label>
+            <input id="customerSearch" name="search" class="form-control" value="@search" placeholder="Name, email, or phone number" />
+        </div>
+        <div class="filter-actions">
+            <button class="btn btn-warning" type="submit"><i class="bi bi-search"></i> Search</button>
+            <a class="btn btn-secondary" asp-action="Index">Clear</a>
+        </div>
+    </form>
+
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table admin-customers-table align-middle">
+                <thead><tr><th>Customer</th><th>Email</th><th>Phone</th><th>Role</th><th>Orders</th><th>Account</th><th>Actions</th></tr></thead>
+                <tbody>
+                @foreach (var customer in Model)
+                {
+                    <tr>
+                        <td><span class="admin-customer-name"><i class="bi bi-person-circle"></i>@customer.UserName</span></td>
+                        <td>@customer.Email</td>
+                        <td>@(customer.PhoneNumber ?? "—")</td>
+                        <td><span class="admin-role-badge admin-role-badge--@customer.Role.ToLowerInvariant()">@customer.Role</span></td>
+                        <td><span class="admin-linked-badge">@customer.OrderCount order@(customer.OrderCount == 1 ? "" : "s")</span></td>
+                        <td>
+                            @if (customer.IsLockedOut) { <span class="badge text-bg-danger">Locked</span> }
+                            else if (customer.EmailConfirmed) { <span class="badge text-bg-success">Active</span> }
+                            else { <span class="badge text-bg-warning">Email pending</span> }
+                        </td>
+                        <td>
+                            <div class="admin-table-actions" role="group" aria-label="Customer actions">
+                                @if (User.IsInRole("Admin"))
+                                {
+                                <a class="btn btn-success btn-sm" asp-action="Edit" asp-route-id="@customer.Id"><i class="bi bi-pencil-square"></i> Edit</a>
+                                @if (customer.OrderCount == 0)
+                                {
+                                    <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this customer account? This cannot be undone.');">
+                                        <input type="hidden" name="id" value="@customer.Id" />
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i> Delete</button>
+                                    </form>
+                                }
+                                else { <span class="btn btn-outline-secondary btn-sm disabled" title="Customers with order history cannot be deleted"><i class="bi bi-lock"></i> In use</span> }
+                                }
+                                else { <span class="text-secondary small"><i class="bi bi-eye"></i> View only</span> }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+    else { <div class="alert alert-warning">No customers found.</div> }
+</section>

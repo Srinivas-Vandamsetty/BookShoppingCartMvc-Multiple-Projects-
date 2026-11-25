@@ -1,17 +1,90 @@
-﻿@{
+@using System.Globalization
+@using BookShoppingCart.Models.Models.DTOs
+@model AdminDashboardResponse
+@{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Dashboard";
+    var maxRevenue = Math.Max(1m, Model.Revenue.Count == 0 ? 0m : Model.Revenue.Max(point => point.Revenue));
+    var chartPoints = string.Join(" ", Model.Revenue.Select((point, index) =>
+    {
+        var x = Model.Revenue.Count < 2 ? 50m : index * 100m / (Model.Revenue.Count - 1);
+        var y = 88m - (point.Revenue / maxRevenue * 72m);
+        return FormattableString.Invariant($"{x:F2},{y:F2}");
+    }));
+    var categoryColors = new[] { "#ff8218", "#8c67f5", "#3c92f5", "#50c878", "#f476a9", "#8f9bb3" };
+    var shareStart = 0m;
+    var donutSegments = new List<string>();
+    for (var index = 0; index < Model.Categories.Count; index++)
+    {
+        var shareEnd = shareStart + Model.Categories[index].SharePercent;
+        donutSegments.Add($"{categoryColors[index % categoryColors.Length]} {shareStart.ToString(CultureInfo.InvariantCulture)}% {shareEnd.ToString(CultureInfo.InvariantCulture)}%");
+        shareStart = shareEnd;
+    }
+    var donutGradient = donutSegments.Count == 0 ? "#334155 0 100%" : string.Join(", ", donutSegments);
+    string ChangeClass(decimal change) => change < 0 ? "is-negative" : "";
+    string ChangeLabel(decimal change) => change == 0 ? "No change" : $"{(change > 0 ? "+" : "")}{change.ToString("0.0", CultureInfo.InvariantCulture)}%";
 }
 
-<!-- Banner Section with Bootstrap 5 utilities only -->
-<div class="position-relative text-center text-white bg-dark" style="height: 600px; background-image: url('/images/DashboardBanner.jpg'); background-size: cover; background-position: center;">
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
+}
 
-    <!-- Dark overlay -->
-    <div class="position-absolute top-0 start-0 w-100 h-100" style="background-color: rgba(0, 0, 0, 0.5);"></div>
-
-    <!-- Centered text content -->
-    <div class="position-absolute top-50 start-50 translate-middle">
-        <p class="text-uppercase fw-bold text-warning letter-spacing-2">Manage your books, genres, and stock</p>
-        <h1 class="fw-bold">Dashboard</h1>
+<section class="dashboard-page">
+    <div class="dashboard-hero">
+        <div>
+            <p class="dashboard-eyebrow">ADMIN OVERVIEW</p>
+            <h1>Store performance at a glance</h1>
+            <p>Live commerce metrics, revenue trends, and store activity for BookVerse.</p>
+        </div>
+        <div class="dashboard-hero__actions">
+            <a class="dashboard-quick-action" asp-controller="Book" asp-action="AddBook"><i class="bi bi-plus-lg"></i> Add book</a>
+            <a class="dashboard-quick-action dashboard-quick-action--secondary" asp-controller="Stock" asp-action="Index"><i class="bi bi-box-seam"></i> Manage stock</a>
+        </div>
     </div>
-</div>
+
+    <div class="dashboard-metrics" aria-label="Store metrics">
+        <article class="metric-card metric-card--orange"><i class="bi bi-cart3 metric-card__icon"></i><div><span>Orders</span><strong>@Model.OrderCount.ToString("N0")</strong><small class="@ChangeClass(Model.OrderChangePercent)"><i class="bi bi-arrow-@(Model.OrderChangePercent < 0 ? "down" : "up")"></i> @ChangeLabel(Model.OrderChangePercent) <em>vs. previous 30 days</em></small></div></article>
+        <article class="metric-card metric-card--green"><i class="bi bi-cash-stack metric-card__icon"></i><div><span>Paid sales</span><strong>@Model.PaidSales.ToString("C0", CultureInfo.GetCultureInfo("en-IN"))</strong><small class="@ChangeClass(Model.SalesChangePercent)"><i class="bi bi-arrow-@(Model.SalesChangePercent < 0 ? "down" : "up")"></i> @ChangeLabel(Model.SalesChangePercent) <em>vs. previous 30 days</em></small></div></article>
+        <article class="metric-card metric-card--violet"><i class="bi bi-book metric-card__icon"></i><div><span>Active books</span><strong>@Model.BookCount.ToString("N0")</strong><small><i class="bi bi-collection"></i> Current catalogue</small></div></article>
+        <article class="metric-card metric-card--blue"><i class="bi bi-people metric-card__icon"></i><div><span>Customers</span><strong>@Model.CustomerCount.ToString("N0")</strong><small><i class="bi bi-person-check"></i> Unique purchasers</small></div></article>
+    </div>
+
+    <div class="dashboard-analytics">
+        <article class="dashboard-panel revenue-panel">
+            <div class="dashboard-panel__heading"><div><h2>Revenue</h2><p>Paid order revenue over the last 30 days</p></div><strong>@Model.PaidSales.ToString("C0", CultureInfo.GetCultureInfo("en-IN"))</strong></div>
+            @if (Model.Revenue.Any(point => point.Revenue > 0))
+            {
+                <div class="revenue-chart" role="img" aria-label="Daily paid revenue for the last 30 days"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="revenueFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#ff8218" stop-opacity=".42"/><stop offset="100%" stop-color="#ff8218" stop-opacity="0"/></linearGradient></defs><polygon class="revenue-chart__fill" points="0,100 @chartPoints 100,100" /><polyline class="revenue-chart__line" points="@chartPoints" /></svg><div class="revenue-chart__labels"><span>@Model.Revenue.First().Date.ToString("MMM d")</span><span>@Model.Revenue[Model.Revenue.Count / 2].Date.ToString("MMM d")</span><span>@Model.Revenue.Last().Date.ToString("MMM d")</span></div></div>
+            }
+            else
+            {
+                <div class="dashboard-empty"><i class="bi bi-graph-up-arrow"></i><span>No paid sales have been recorded in the last 30 days.</span></div>
+            }
+        </article>
+
+        <article class="dashboard-panel category-panel">
+            <div class="dashboard-panel__heading"><div><h2>Category performance</h2><p>Share of paid sales by genre</p></div></div>
+            @if (Model.Categories.Count > 0)
+            {
+                <div class="category-content"><div class="category-donut" style="background: conic-gradient(@donutGradient);"><div><strong>@Model.PaidSales.ToString("C0", CultureInfo.GetCultureInfo("en-IN"))</strong><span>Total paid sales</span></div></div><div class="category-list">@for (var index = 0; index < Model.Categories.Count; index++) { var category = Model.Categories[index]; <div class="category-row"><span class="category-swatch" style="background-color:@categoryColors[index % categoryColors.Length]"></span><span>@category.Category</span><strong>@category.Sales.ToString("C0", CultureInfo.GetCultureInfo("en-IN"))</strong><small>@category.SharePercent.ToString("0.0")%</small></div> }</div></div>
+            }
+            else
+            {
+                <div class="dashboard-empty"><i class="bi bi-pie-chart"></i><span>Category sales will appear after paid orders are received.</span></div>
+            }
+        </article>
+    </div>
+
+    <article class="dashboard-panel orders-panel">
+        <div class="dashboard-panel__heading"><div><h2>Recent orders</h2><p>Latest orders placed in your store</p></div><a asp-action="AllOrders">View all orders <i class="bi bi-arrow-right"></i></a></div>
+        @if (Model.RecentOrders.Count > 0)
+        {
+            <div class="table-responsive"><table class="dashboard-orders"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead><tbody>@foreach (var order in Model.RecentOrders) { <tr><td><strong>#BV-@order.OrderId</strong></td><td>@order.CustomerName</td><td>@order.ItemCount</td><td>@order.Total.ToString("C2", CultureInfo.GetCultureInfo("en-IN"))</td><td><span class="order-pill @(order.IsPaid ? "order-pill--paid" : "order-pill--pending")">@(order.IsPaid ? "Paid" : "Pending")</span></td><td><span class="order-pill order-pill--status">@order.Status</span></td><td>@order.CreatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</td></tr> }</tbody></table></div>
+        }
+        else
+        {
+            <div class="dashboard-empty"><i class="bi bi-receipt"></i><span>No orders have been placed yet.</span></div>
+        }
+    </article>
+    <p class="dashboard-inventory-note"><i class="bi bi-exclamation-triangle"></i> <strong>@Model.LowStockCount</strong> active @(Model.LowStockCount == 1 ? "book is" : "books are") at or below 5 in stock. <a asp-controller="Stock" asp-action="Index">Review inventory</a></p>
+</section>

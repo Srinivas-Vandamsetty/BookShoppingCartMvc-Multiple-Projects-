@@ -1,90 +1,53 @@
 @model IEnumerable<Order>
+@{
+    var orders = Model?.ToList() ?? [];
+    var delivered = orders.Count(order => string.Equals(order.OrderStatus.StatusName, "Delivered", StringComparison.OrdinalIgnoreCase));
+    var inTransit = orders.Count(order => string.Equals(order.OrderStatus.StatusName, "Shipped", StringComparison.OrdinalIgnoreCase));
+}
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="text-dark-gray">My Orders</h2>
-        <a href="/Identity/Account/Manage" class="btn btn-outline-secondary">Back</a>
-    </div>
-
-    @if (Model != null && Model.Any())
+<section class="reading-journey">
+    <div class="reading-journey__header"><p>Your Reading Journey</p><h1>My Orders</h1></div>
+    @if (orders.Any())
     {
-        @foreach (var order in Model)
-        {
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <div>
-                        <a asp-action="Details" asp-route-id="@order.Id" class="me-2">Order #@order.Id</a><strong>Order Date:</strong> @order.CreateDate.ToString("dd-MM-yyyy") <span class="ms-2">Total: ₹@order.Total.ToString("0.00")</span>
-                    </div>
-                    <div>
-                        @{
-                            var status = order.OrderStatus.StatusName.ToLower();
-                            var badgeColor = status switch
-                            {
-                                "pending" => "dimgray",
-                                "shipped" => "goldenrod",
-                                "delivered" => "seagreen",
-                                "refund" => "blue",
-                                "returned" or "cancelled" => "#dc3545",
-                                _ => "black"
-                            };
-                        }
-                        <span class="badge px-3 py-1 fs-6 text-white" style="background-color:@badgeColor">
-                            @order.OrderStatus.StatusName
-                        </span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    @if (order.OrderDetail != null && order.OrderDetail.Any())
-                    {
-                        <table class="table table-bordered table-hover">
-                            <thead class="table-secondary">
-                                <tr>
-                                    <th>Book</th>
-                                    <th>Image</th>
-                                    <th>Genre</th>
-                                    <th>Unit Price (INR)</th>
-                                    <th>Quantity</th>
-                                    <th>Total Price</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var item in order.OrderDetail)
-                                {
-                                    <tr>
-                                        <td>@(string.IsNullOrEmpty(item.BookName) ? item.Book.BookName : item.BookName)</td>
-                                        <td>
-                                            <img src="@((string.IsNullOrEmpty(item.Book.Image)) ? "/images/NoImage.png" : $"/images/{item.Book.Image}")" class="img-thumbnail" style="width: 80px; height: 100px;" />
-                                        </td>
-                                        <td>@(string.IsNullOrEmpty(item.GenreName) ? item.Book.Genre.GenreName : item.GenreName)</td>
-                                        <td>@item.UnitPrice</td>
-                                        <td>@item.Quantity</td>
-                                        <td>@((item.UnitPrice * item.Quantity).ToString("0.00"))</td>
-                                    </tr>
-                                }
-                                <tr>
-                                    <td colspan="5" class="text-end fw-bold">Total:</td>
-                                    <td class="fw-bold text-success">
-                                        ₹@(order.OrderDetail.Select(item => item.UnitPrice * item.Quantity).Sum().ToString("0.00"))
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    }
-                </div>
-            </div>
-        }
+        <div class="reading-journey__layout">
+            <div class="reading-journey__timeline" aria-hidden="true"></div>
+            <main class="reading-journey__orders">
+                @foreach (var order in orders)
+                {
+                    var status = order.OrderStatus.StatusName;
+                    var normalizedStatus = status.ToLowerInvariant();
+                    var shipped = normalizedStatus is "shipped" or "delivered";
+                    var isDelivered = normalizedStatus == "delivered";
+                    var primaryItem = order.OrderDetail?.FirstOrDefault();
+                    var title = primaryItem is null ? "Your book order" : string.IsNullOrWhiteSpace(primaryItem.BookName) ? primaryItem.Book.BookName : primaryItem.BookName;
+                    var image = primaryItem?.Book?.Image;
+                    <article class="journey-order-card">
+                        <div class="journey-order-card__date"><span><i class="bi bi-circle-fill"></i></span><strong>@order.CreateDate.ToString("dd MMM, yyyy")</strong><small>Order #BV-@order.Id</small></div>
+                        <img class="journey-order-card__cover" src="@(string.IsNullOrWhiteSpace(image) ? "/images/NoImage.png" : $"/images/{image}")" alt="@title cover" />
+                        <div class="journey-order-card__body">
+                            <div class="journey-order-card__meta"><span>Order ID: <strong>#BV-@order.Id</strong></span><span>Purchase Date: @order.CreateDate.ToString("dd MMM yyyy")</span></div>
+                            <h2>@title</h2><p>@(order.OrderDetail?.Sum(item => item.Quantity) ?? 0) item@((order.OrderDetail?.Sum(item => item.Quantity) ?? 0) == 1 ? "" : "s") · @status</p>
+                            <div class="journey-progress @(normalizedStatus is "cancelled" or "returned" ? "journey-progress--cancelled" : "")">
+                                <div class="journey-progress__step is-complete"><i class="bi bi-check-lg"></i><span>Order Placed</span></div>
+                                <div class="journey-progress__line @(shipped ? "is-complete" : "")"></div>
+                                <div class="journey-progress__step @(shipped ? "is-complete" : "")"><i class="bi bi-truck"></i><span>Shipped</span></div>
+                                <div class="journey-progress__line @(isDelivered ? "is-complete" : "")"></div>
+                                <div class="journey-progress__step @(isDelivered ? "is-complete" : "")"><i class="bi bi-box-seam"></i><span>Delivered</span></div>
+                            </div>
+                        </div>
+                        <div class="journey-order-card__actions"><p>Total: <strong>₹@order.Total.ToString("N2")</strong></p><a asp-action="Details" asp-route-id="@order.Id" class="journey-btn journey-btn--primary">View Order</a><a asp-controller="FrontPage" asp-action="Contact" class="journey-btn">Get Help</a></div>
+                    </article>
+                }
+                <partial name="_OrderPaging" />
+            </main>
+            <aside class="reading-journey__side">
+                <section class="journey-side-card"><h2><i class="bi bi-bar-chart-line"></i> Order Summary</h2><div><i class="bi bi-cart3"></i><span>Total Orders</span><strong>@orders.Count</strong></div><div><i class="bi bi-box-seam"></i><span>Delivered</span><strong class="is-success">@delivered</strong></div><div><i class="bi bi-truck"></i><span>In Transit</span><strong class="is-warning">@inTransit</strong></div></section>
+                <section class="journey-side-card journey-side-card--help"><h2><i class="bi bi-question-circle"></i> Need help?</h2><p>Have a question about an order, delivery, or return? Our support team is here to help.</p><a asp-controller="FrontPage" asp-action="Contact" class="journey-btn journey-btn--primary">Get Help</a></section>
+            </aside>
+        </div>
     }
     else
     {
-        <div class="text-center my-5">
-            <img src="/images/EmptyCartImage.png" alt="Empty Cart" class="img-fluid" style="max-width: 250px;" />
-            <h3 class="mt-4 text-danger">You have no orders</h3>
-            <p class="lead mt-2"><strong>Looks like you haven’t placed any orders yet.</strong></p>
-            <a href="/" class="btn btn-primary mt-3">
-                <i class="bi bi-shop me-1"></i>Start Shopping
-            </a>
-        </div>
+        <div class="journey-empty"><img src="/images/EmptyCartImage.png" alt="No orders yet" /><h2>Your reading journey starts here</h2><p>You have not placed an order yet. Explore the BookVerse collection to find your next read.</p><a asp-controller="Home" asp-action="Index" class="journey-btn journey-btn--primary">Browse Books</a></div>
     }
-</div>
-
-<partial name="_OrderPaging" />
+</section>

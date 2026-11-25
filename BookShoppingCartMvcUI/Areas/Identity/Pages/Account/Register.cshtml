@@ -1,83 +1,63 @@
-﻿@page
+@page
 @model RegisterModel
-
 @{
-    ViewData["Title"] = "Sign Up";
+    ViewData["Title"] = "Join BookVerse";
 }
+<link rel="stylesheet" href="~/css/register.css" asp-append-version="true" />
 
-<!-- Fullscreen background image container -->
-<div class="min-vh-100 d-flex justify-content-center align-items-center"
-     style="background-image: url('@Url.Content("~/images/BookImage.jpg")'); background-size: cover; background-position: center;">
-
-    <div class="card p-4 shadow-lg border-0 w-100"
-         style="max-width: 500px; background-color: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 20px;">
-
-        <h3 class="text-white text-center fw-bold mb-4">CREATE ACCOUNT</h3>
-
-        <form id="SignUpForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger text-center mb-3" role="alert"></div>
-
-            <!-- User Name -->
-            <div class="input-group mb-3 rounded-pill shadow-sm">
-                <span class="input-group-text bg-white border-0 rounded-start-pill">
-                    <i class="bi bi-person-fill text-primary"></i>
-                </span>
-                <input asp-for="Input.UserName" class="form-control border-0 rounded-end-pill" placeholder="Username" />
+<section class="bv-register" aria-labelledby="register-title">
+    <div class="bv-register__backdrop" aria-hidden="true"></div>
+    <div class="bv-register__content">
+        <div class="bv-register__card">
+            <div class="bv-register__brand" aria-label="BookVerse Reading Club">
+                <i class="bi bi-bookshelf" aria-hidden="true"></i><strong>Book<span>Verse</span></strong>
+                <p><span></span> Reading Club <span></span></p>
             </div>
-            <span asp-validation-for="Input.UserName" class="text-danger"></span>
-
-            <!-- Email -->
-            <div class="input-group mb-3 rounded-pill shadow-sm">
-                <span class="input-group-text bg-white border-0 rounded-start-pill">
-                    <i class="bi bi-envelope-fill text-primary"></i>
-                </span>
-                <input asp-for="Input.Email" class="form-control border-0 rounded-end-pill" autocomplete="username" placeholder="Email" />
-            </div>
-            <span asp-validation-for="Input.Email" class="text-danger"></span>
-
-            <!-- Password -->
-            <div class="input-group mb-3 rounded-pill shadow-sm">
-                <input asp-for="Input.Password" type="password" class="form-control border-0 rounded-start-pill" autocomplete="new-password" placeholder="Password" />
-                <span class="input-group-text bg-white border-0 rounded-end-pill">
-                    <i class="bi bi-lock-fill text-primary"></i>
-                </span>
-            </div>
-            <span asp-validation-for="Input.Password" class="text-danger"></span>
-
-            <!-- Confirm Password -->
-            <div class="input-group mb-3 rounded-pill shadow-sm">
-                <input asp-for="Input.ConfirmPassword" type="password" class="form-control border-0 rounded-start-pill" autocomplete="new-password" placeholder="Confirm Password" />
-                <span class="input-group-text bg-white border-0 rounded-end-pill">
-                    <i class="bi bi-lock-fill text-primary"></i>
-                </span>
-            </div>
-            <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-
-            <!-- Phone Number -->
-            <div class="input-group mb-4 rounded-pill shadow-sm">
-                <span class="input-group-text bg-white border-0 rounded-start-pill">
-                    <i class="bi bi-telephone-fill text-primary"></i>
-                </span>
-                <input asp-for="Input.PhoneNumber" class="form-control border-0 rounded-end-pill" placeholder="Phone Number" />
-            </div>
-            <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
-
-            <!-- Sign Up Button -->
-            <div class="d-flex justify-content-center">
-                <button type="submit" class="btn btn-light fw-bold w-50 rounded-pill py-2">SIGN UP</button>
-            </div>
-
-            <!-- Optional login link -->
-            <div class="text-center mt-3">
-                <a asp-page="./Login" class="text-info">Already have an account? Login</a>
-            </div>
-        </form>
+            <header class="bv-register__heading">
+                <h1 id="register-title">Join BookVerse</h1>
+                <p>Create your free account and be part of our reading club.</p>
+            </header>
+            <form id="bookverse-register" method="post" asp-route-returnUrl="@Model.ReturnUrl">
+                <div asp-validation-summary="ModelOnly" class="bv-register__errors" role="alert" aria-live="polite"></div>
+                <div class="bv-register__field">
+                    <label asp-for="Input.UserName">Username</label>
+                    <div class="bv-register__input-wrap"><i class="bi bi-person-fill" aria-hidden="true"></i><input asp-for="Input.UserName" autocomplete="username" placeholder="Choose a username" autofocus /></div>
+                    <span asp-validation-for="Input.UserName" class="bv-register__field-error"></span>
+                </div>
+                <div class="bv-register__field">
+                    <label asp-for="Input.Email">Email address</label>
+                    <div class="bv-register__input-wrap"><i class="bi bi-envelope-fill" aria-hidden="true"></i><input asp-for="Input.Email" autocomplete="email" inputmode="email" placeholder="you@example.com" /></div>
+                    <span asp-validation-for="Input.Email" class="bv-register__field-error"></span>
+                </div>
+                <div class="bv-register__field">
+                    <label asp-for="Input.Password">Password</label>
+                    <div class="bv-register__input-wrap bv-register__input-wrap--password"><i class="bi bi-lock-fill" aria-hidden="true"></i><input asp-for="Input.Password" autocomplete="new-password" placeholder="Create a password" /><button type="button" class="bv-register__visibility" data-password-toggle="Input_Password" aria-label="Show password" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button></div>
+                    <span asp-validation-for="Input.Password" class="bv-register__field-error"></span>
+                </div>
+                <div class="bv-register__field">
+                    <label asp-for="Input.ConfirmPassword">Confirm password</label>
+                    <div class="bv-register__input-wrap bv-register__input-wrap--password"><i class="bi bi-lock-fill" aria-hidden="true"></i><input asp-for="Input.ConfirmPassword" autocomplete="new-password" placeholder="Repeat your password" /><button type="button" class="bv-register__visibility" data-password-toggle="Input_ConfirmPassword" aria-label="Show password" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button></div>
+                    <span asp-validation-for="Input.ConfirmPassword" class="bv-register__field-error"></span>
+                </div>
+                <div class="bv-register__field bv-register__field--optional">
+                    <label asp-for="Input.PhoneNumber">Phone number, optional</label>
+                    <div class="bv-register__input-wrap"><i class="bi bi-telephone-fill" aria-hidden="true"></i><input asp-for="Input.PhoneNumber" autocomplete="tel" inputmode="tel" placeholder="Phone number, optional" /></div>
+                    <span asp-validation-for="Input.PhoneNumber" class="bv-register__field-error"></span>
+                </div>
+                <div class="bv-register__strength" aria-live="polite"><span>Password strength</span><div class="bv-register__strength-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div><strong id="password-strength">Enter a password</strong></div>
+                <button id="register-submit" class="bv-register__submit" type="submit"><span id="register-button-text">Create free account</span><i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+                <p class="bv-register__progress" id="register-progress" role="status" aria-live="polite"></p>
+            </form>
+            <p class="bv-register__signin">Already have an account? <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Sign in</a></p>
+        </div>
+        <aside class="bv-register__benefits" aria-label="Membership benefits">
+            <div><i class="bi bi-book" aria-hidden="true"></i><span>Personalized<br />recommendations</span></div>
+            <div><i class="bi bi-shield-check" aria-hidden="true"></i><span>Secure<br />checkout</span></div>
+            <div><i class="bi bi-heart" aria-hidden="true"></i><span>Saved<br />wishlists</span></div>
+        </aside>
     </div>
-</div>
-
-<!-- Bootstrap Icons (if not already included globally) -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
-
+</section>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/register.js" asp-append-version="true"></script>
 }

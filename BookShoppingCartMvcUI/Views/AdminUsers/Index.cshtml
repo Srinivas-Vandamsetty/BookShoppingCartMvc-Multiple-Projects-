@@ -1,0 +1,11 @@
+@model IEnumerable<BookShoppingCartMvcUI.Models.AdminUserRoleListItem>
+@{ Layout = "_AdminLayout"; var search = ViewBag.Search as string; }
+
+<section class="admin-page">
+    <div class="admin-page__header"><div><h1><i class="bi bi-person-gear"></i>Users &amp; Roles</h1><p>Assign Customer, Employee, or Admin access. Role changes require the user to sign in again.</p></div></div>
+    <div class="admin-role-guide" aria-label="Role permissions"><span><strong>Customer</strong> Browse, cart, checkout, and personal orders</span><span><strong>Employee</strong> Customer and order processing</span><span><strong>Admin</strong> Full application management</span></div>
+    <form method="get" class="admin-filter-bar" role="search"><div class="filter-field"><label for="userSearch">Search users</label><input id="userSearch" name="search" class="form-control" value="@search" placeholder="Name or email" /></div><div class="filter-actions"><button class="btn btn-warning" type="submit"><i class="bi bi-search"></i> Search</button><a class="btn btn-secondary" asp-action="Index">Clear</a></div></form>
+    <div class="table-responsive"><table class="table admin-customers-table align-middle"><thead><tr><th>User</th><th>Email</th><th>Role</th><th>Account</th><th>Actions</th></tr></thead><tbody>
+    @foreach (var user in Model) { <tr><td><span class="admin-customer-name"><i class="bi bi-person-circle"></i>@user.UserName</span></td><td>@user.Email</td><td><span class="admin-role-badge admin-role-badge--@user.Role.ToLowerInvariant()">@user.Role</span></td><td><span class="badge @(user.EmailConfirmed ? "text-bg-success" : "text-bg-warning")">@(user.EmailConfirmed ? "Active" : "Email pending")</span></td><td>@if (user.Id == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value) { <span class="text-secondary small"><i class="bi bi-shield-check"></i> Current account</span> } else { <a class="btn btn-success btn-sm" asp-action="EditRole" asp-route-id="@user.Id"><i class="bi bi-shield-lock"></i> Manage role</a> }</td></tr> }
+    </tbody></table></div>
+</section>

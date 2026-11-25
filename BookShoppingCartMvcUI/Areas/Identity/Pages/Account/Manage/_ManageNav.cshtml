@@ -1,40 +1,9 @@
-﻿@inject SignInManager<IdentityUser> SignInManager
-@{
-    var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
-}
-
-<ul class="nav flex-column">
-    <li class="nav-item mb-2">
-        <a class="nav-link py-2 px-3 rounded-3 @ManageNavPages.IndexNavClass(ViewContext)" asp-page="./Index"
-           style="color: #34495e; background-color: #eaf2f8;">
-            <i class="bi bi-person-circle me-2"></i> Profile
-        </a>
-    </li>
-    <li class="nav-item mb-2">
-        <a class="nav-link py-2 px-3 rounded-3 @ManageNavPages.EmailNavClass(ViewContext)" asp-page="./Email"
-           style="color: #34495e;">
-            <i class="bi bi-envelope-at-fill me-2"></i> Email
-        </a>
-    </li>
-    <li class="nav-item mb-2">
-        <a class="nav-link py-2 px-3 rounded-3 @ManageNavPages.ChangePasswordNavClass(ViewContext)" asp-page="./ChangePassword"
-           style="color: #34495e;">
-            <i class="bi bi-shield-lock-fill me-2"></i> Password
-        </a>
-    </li>
-    @if (hasExternalLogins)
-    {
-        <li class="nav-item mb-2">
-            <a class="nav-link py-2 px-3 rounded-3 @ManageNavPages.ExternalLoginsNavClass(ViewContext)" asp-page="./ExternalLogins"
-               style="color: #34495e;">
-                <i class="bi bi-box-arrow-in-right me-2"></i> External Logins
-            </a>
-        </li>
-    }
-    <li class="nav-item">
-        <a class="nav-link py-2 px-3 rounded-3" href="/UserOrder/UserOrders"
-           style="color: #34495e;">
-            <i class="bi bi-bag-check-fill me-2"></i> My Orders
-        </a>
-    </li>
-</ul>
+@inject SignInManager<IdentityUser> SignInManager
+@{ var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any(); }
+<nav class="account-nav" aria-label="Account settings navigation">
+    <a class="@ManageNavPages.IndexNavClass(ViewContext)" asp-page="./Index"><i class="bi bi-person"></i><span>Personal Information</span></a>
+    <a class="@ManageNavPages.EmailNavClass(ViewContext)" asp-page="./Email"><i class="bi bi-bell"></i><span>Email &amp; Notifications</span></a>
+    <a class="@ManageNavPages.ChangePasswordNavClass(ViewContext)" asp-page="./ChangePassword"><i class="bi bi-shield-lock"></i><span>Password &amp; Security</span></a>
+    @if (hasExternalLogins) { <a class="@ManageNavPages.ExternalLoginsNavClass(ViewContext)" asp-page="./ExternalLogins"><i class="bi bi-link-45deg"></i><span>Linked Accounts</span></a> }
+    <a href="/UserOrder/UserOrders"><i class="bi bi-box-seam"></i><span>My Orders</span></a>
+</nav>

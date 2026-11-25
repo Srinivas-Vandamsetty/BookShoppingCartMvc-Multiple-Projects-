@@ -33,7 +33,7 @@ public class DeleteGenreEndpoint : Endpoint<DeleteGenreRequest>
         catch (InvalidOperationException ex)
         {
             AddError(ex.Message);
-            await SendErrorsAsync(400, ct);
+            await SendErrorsAsync(409, ct);
         }
     }
 }

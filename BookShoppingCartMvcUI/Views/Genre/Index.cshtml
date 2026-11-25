@@ -5,9 +5,9 @@
     Layout = "_AdminLayout";
 }
 
-<div class="container my-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="fw-bold text--bs-gray-dark">🎭 Genres</h2>
+<section class="admin-page">
+    <div class="admin-page__header">
+        <div><h1><i class="bi bi-layers"></i>Genres</h1><p>Organize the categories used throughout your book catalogue.</p></div>
         <a asp-action="AddGenre" asp-controller="Genre" class="btn btn-warning">
             <i class="bi bi-plus-circle me-1"></i> Add New Genre
         </a>
@@ -16,10 +16,11 @@
     @if (Model?.Any() == true)
     {
         <div class="table-responsive">
-            <table class="table align-middle table-bordered table-hover shadow-sm rounded-3 bg-white">
+            <table class="table admin-genres-table align-middle table-bordered table-hover">
                 <thead class="table-light">
                     <tr>
                         <th>Genre</th>
+                        <th>Books</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -27,18 +28,38 @@
                     @foreach (var genre in Model)
                     {
                         <tr>
-                            <td class="fw-semibold">@genre.GenreName</td>
+                            <td class="fw-semibold"><span class="admin-genre-name"><i class="bi bi-bookmark-fill"></i>@genre.GenreName</span></td>
                             <td>
-                                <div class="btn-group" role="group">
+                                @if (genre.BookCount > 0)
+                                {
+                                    <span class="badge admin-linked-badge"><i class="bi bi-link-45deg"></i> @genre.BookCount linked book@(genre.BookCount == 1 ? "" : "s")</span>
+                                }
+                                else
+                                {
+                                    <span class="admin-empty-link"><i class="bi bi-check-circle"></i> No linked books</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="admin-table-actions" role="group">
                                     <a asp-action="UpdateGenre" asp-controller="Genre" asp-route-id="@genre.Id"
-                                       class="btn btn-success btn-sm">
-                                        <i class="bi bi-pencil-square"></i> Edit
+                                       class="btn btn-success btn-sm" title="Edit @genre.GenreName" aria-label="Edit @genre.GenreName">
+                                        <i class="bi bi-pencil-square"></i><span class="visually-hidden"> Edit</span>
                                     </a>
-                                    <form asp-action="DeleteGenre" method="post" class="d-inline">
-<input type="hidden" name="id" value="@genre.Id" />
-<button type="submit" class="btn btn-danger btn-sm">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </button></form>
+                                    @if (genre.BookCount > 0)
+                                    {
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="This genre has linked books and cannot be deleted.">
+                                            <i class="bi bi-lock-fill"></i> In use
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="DeleteGenre" method="post" class="d-inline" onsubmit="return confirm('Delete this empty genre? This cannot be undone.');">
+                                            <input type="hidden" name="id" value="@genre.Id" />
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Delete @genre.GenreName" aria-label="Delete @genre.GenreName">
+                                                <i class="bi bi-trash"></i><span class="visually-hidden"> Delete</span>
+                                            </button>
+                                        </form>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -53,4 +74,4 @@
             No genres found. Click <strong>Add New Genre</strong> to get started.
         </div>
     }
-</div>
+</section>

@@ -18,7 +18,8 @@ public class DbSeeder
     {
         var context = service.GetRequiredService<ApplicationDbContext>();
         var roles = service.GetRequiredService<RoleManager<IdentityRole>>();
-        foreach (var role in new[] { "Admin", "User" })
+        // "User" is retained only for existing installations; new registrations receive Customer.
+        foreach (var role in new[] { "Admin", "Employee", "Customer", "User" })
         {
             if (!await roles.RoleExistsAsync(role))
             {

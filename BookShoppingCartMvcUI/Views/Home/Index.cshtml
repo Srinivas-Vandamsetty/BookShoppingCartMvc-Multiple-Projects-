@@ -1,121 +1,109 @@
-@using BookShoppingCart.Models.Models.DTOs
+@using System.Globalization
 @model BookDisplayModel
 @{
-    int pageSize = 12;
-    int pageNumber = Model.Page;
-    int totalBooks = Model.TotalCount;
-    int totalPages = (int)Math.Ceiling((double)totalBooks / pageSize);
-    var pagedBooks = Model.Books;
+    var pageSize = 12;
+    var totalPages = (int)Math.Ceiling((double)Model.TotalCount / pageSize);
+    var selectedGenres = Model.GenreIds.ToHashSet();
 }
+<link rel="stylesheet" href="~/css/catalog.css" asp-append-version="true" />
 
-<div class="bg-white text-black py-2 text-center fw-bold">
-    <marquee behavior="scroll" direction="left" scrollamount="6">
-        🚚 Free Delivery on Orders of ₹999 or more after discounts!🎉
-
-    </marquee>
-</div>
-
-<div class="container mt-4">
-    <!-- Search Form -->
-    <div class="d-flex justify-content-center">
-        <div class="my-2">
-            <form asp-action="Index" method="get" class="row g-3 align-items-center justify-content-center">
-                <div class="col-auto">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control input-group-custom " id="sterm" name="sterm"
-                               value="@Context.Request.Query["sterm"]"
-                               placeholder="Search by title, author, or genre">
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-warning">Search</button>
-                    <a href="/Home/Index" class="btn btn-dark">Reset</a>
-                </div>
-            </form>
+<section class="bv-catalog">
+    <header class="bv-catalog__hero">
+        <div class="bv-catalog__hero-content">
+            <h1>Find your next great read</h1>
+            <span aria-hidden="true"></span>
         </div>
-    </div>
+    </header>
 
-    <!-- Book Grid -->
-    <div class="row mt-4">
-        @foreach (var book in pagedBooks)
-        {
-            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                <div class="card book-card shadow-sm border-0">
-                    <div class="position-relative">
-                        <a href="@Url.Action("BookDetails", "Book", new { id = book.Id })">
-                            <img src="/images/@(string.IsNullOrEmpty(book.Image) ? "NoImage.png" : book.Image)" class="card-img-top book-image" alt="Book Image">
-                        </a>
-                        @if (book.Quantity == 0)
-                        {
-                            <span class="badge bg-danger position-absolute top-0 end-0 m-2">Out of Stock</span>
-                        }
-                    </div>
-                    <div class="card-body text-center">
-                        <h6 class="fw-bold">@book.BookName</h6>
-                        <p class="mb-1"><strong>Genre:</strong> @book.GenreName</p>
-                        <p class="mb-1"><strong>Author:</strong> @book.AuthorName</p>
-                        <p class="fw-bold text-primary">₹@book.Price</p>
+    <form class="bv-catalog__form" asp-action="Index" method="get">
+        <section class="bv-catalog__search" aria-label="Search books">
+            <label class="visually-hidden" for="catalog-search">Search books</label>
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input id="catalog-search" name="sTerm" value="@Model.STerm" maxlength="100" placeholder="Search by book title, author, genre, or keyword" />
+            <button type="submit">Search</button>
+        </section>
 
-                        @if (book.Quantity > 0)
-                        {
-                            <button class="btn btn-warning w-100 addToCartButton" data-book-id="@book.Id">
-                                <i class="bi bi-cart-plus"></i> Add to Cart</button>
-                        }
-                        else
-                        {
-                            <button class="btn btn-secondary w-100" disabled>Out of Stock</button>
-                        }
+        <div class="bv-catalog__body">
+            <aside class="bv-catalog__filters" aria-label="Filter books">
+                <div class="bv-catalog__filter-title"><h2><i class="bi bi-funnel"></i> Filter books</h2><a asp-action="Index">Clear all</a></div>
+                <fieldset>
+                    <legend>Category</legend>
+                    @foreach (var genre in Model.Genres)
+                    {
+                        <label class="bv-catalog__check"><input type="checkbox" name="genreIds" value="@genre.Id" checked="@selectedGenres.Contains(genre.Id)" /><span>@genre.GenreName</span></label>
+                    }
+                </fieldset>
+                <fieldset>
+                    <legend>Author</legend>
+                    <label class="visually-hidden" for="catalog-author">Filter by author</label>
+                    <div class="bv-catalog__author"><i class="bi bi-search" aria-hidden="true"></i><input id="catalog-author" name="author" value="@Model.Author" maxlength="100" placeholder="Search author" /></div>
+                </fieldset>
+                <fieldset>
+                    <legend>Price range</legend>
+                    <div class="bv-catalog__price"><input name="minPrice" type="number" min="0" step="1" value="@(Model.MinPrice?.ToString(CultureInfo.InvariantCulture))" placeholder="Min ₹" /><span>to</span><input name="maxPrice" type="number" min="0" step="1" value="@(Model.MaxPrice?.ToString(CultureInfo.InvariantCulture))" placeholder="Max ₹" /></div>
+                </fieldset>
+                <fieldset>
+                    <legend>Availability</legend>
+                    <label class="bv-catalog__check"><input type="checkbox" name="inStockOnly" value="true" checked="@Model.InStockOnly" /><span>In stock only</span></label>
+                </fieldset>
+                <button type="submit" class="bv-catalog__apply">Apply filters</button>
+            </aside>
+
+            <main class="bv-catalog__results">
+                <div class="bv-catalog__results-head">
+                    <p>Showing <strong>@Model.Books.Count()</strong> of @Model.TotalCount books</p>
+                    <div class="bv-catalog__tools">
+                        <label for="catalog-sort">Sort by</label>
+                        <select id="catalog-sort" name="sort" onchange="this.form.submit()">
+                            <option value="title" selected="@(Model.Sort == "title")">Title A–Z</option>
+                            <option value="newest" selected="@(Model.Sort == "newest")">Newest</option>
+                            <option value="price-asc" selected="@(Model.Sort == "price-asc")">Price low to high</option>
+                            <option value="price-desc" selected="@(Model.Sort == "price-desc")">Price high to low</option>
+                        </select>
+                        <div class="bv-catalog__view-toggle" role="group" aria-label="Choose view"><button type="button" class="is-active" data-catalog-view="grid" aria-label="Grid view"><i class="bi bi-grid-3x3-gap-fill"></i></button><button type="button" data-catalog-view="list" aria-label="List view"><i class="bi bi-list-ul"></i></button></div>
                     </div>
                 </div>
-            </div>
-        }
-    </div>
 
-    <!-- Pagination -->
-    @if (totalPages > 1)
-    {
-        <nav aria-label="Book Pagination">
-            <ul class="pagination justify-content-center mt-4">
-                <!-- Previous button with fade effect when on the first page -->
-                <li class="page-item @(pageNumber == 1 ? "disabled" : "")">
-                    <a class="page-link bg-warning text-light border-secondary @(pageNumber == 1 ? "opacity-50 cursor-not-allowed" : "")" asp-action="Index" asp-route-page="@(pageNumber - 1)" asp-route-sTerm="@Model.STerm" asp-route-genreId="@Model.GenreId" tabindex="-1">Previous</a>
-                </li>
-                @for (int i = Math.Max(1, pageNumber - 2); i <= Math.Min(totalPages, pageNumber + 2); i++)
+                @if (Model.Books.Any())
                 {
-                    var isActive = i == pageNumber;
-                    <li class="page-item @(isActive ? "active" : "")">
-                        <a class="page-link @(isActive ? "bg-dark text-white fw-bold border-warning" : "bg-warning text-light border-secondary")" asp-action="Index" asp-route-page="@i" asp-route-sTerm="@Model.STerm" asp-route-genreId="@Model.GenreId">
-                            @i
-                        </a>
-                    </li>
+                    <div class="bv-catalog__grid" id="catalog-grid">
+                        @foreach (var book in Model.Books)
+                        {
+                            <article class="bv-book-card">
+                                <a class="bv-book-card__cover" href="@Url.Action("BookDetails", "Book", new { id = book.Id })"><img src="/images/@(string.IsNullOrEmpty(book.Image) ? "NoImage.png" : book.Image)" alt="@book.BookName book cover" /></a>
+                                <div class="bv-book-card__content">
+                                    <span class="bv-book-card__genre">@book.GenreName</span>
+                                    <h2><a href="@Url.Action("BookDetails", "Book", new { id = book.Id })">@book.BookName</a></h2>
+                                    <p>by @book.AuthorName</p>
+                                    <div class="bv-book-card__footer"><strong>₹@book.Price.ToString("N2")</strong>
+                                        @if (book.Quantity > 0) { <button type="button" class="addToCartButton" data-book-id="@book.Id" aria-label="Add @book.BookName to cart"><i class="bi bi-cart-plus"></i><span>Add to cart</span></button> }
+                                        else { <span class="bv-book-card__sold-out">Out of stock</span> }
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    </div>
                 }
-                <!-- Next button with fade effect when on the last page -->
-                <li class="page-item @(pageNumber == totalPages ? "disabled" : "")">
-                    <a class="page-link bg-warning text-light border-secondary @(pageNumber == totalPages ? "opacity-50 cursor-not-allowed" : "")" asp-action="Index" asp-route-page="@(pageNumber + 1)" asp-route-sTerm="@Model.STerm" asp-route-genreId="@Model.GenreId">Next</a>
-                </li>
-            </ul>
-        </nav>
-    }
+                else
+                {
+                    <div class="bv-catalog__empty"><i class="bi bi-book"></i><h2>No books found</h2><p>Try removing a filter or searching for another title.</p><a asp-action="Index">Clear filters</a></div>
+                }
 
-    <!-- No Results Found -->
-    @if (!pagedBooks.Any())
-    {
-        <div class="col-12 text-center my-5">
-            <div class="p-5 rounded-4 shadow-lg book-not-found">
-                <div class="mb-4">
-                    <i class="bi bi-book-x fs-1 text-warning"></i>
-                </div>
-                <h4 class="fw-bold mb-2">No Books Found</h4>
-                <p class="text-light text-opacity-75 mb-4">We couldn’t find any books matching your search criteria.</p>
-                <a href="/Home/Index" class="btn px-4 py-2 rounded-pill btn-reset-filters">
-                    <i class="bi bi-arrow-clockwise me-2"></i> Reset Filters
-                </a>
-            </div>
+                @if (totalPages > 1)
+                {
+                    <nav class="bv-catalog__pagination" aria-label="Book pages">
+                        <button type="submit" name="page" value="@(Model.Page - 1)" disabled="@(Model.Page == 1)"><i class="bi bi-arrow-left"></i> Previous</button>
+                        @for (var page = Math.Max(1, Model.Page - 2); page <= Math.Min(totalPages, Model.Page + 2); page++)
+                        { <button type="submit" name="page" value="@(page)" class="@(page == Model.Page ? "is-current" : "")">@(page)</button> }
+                        <button type="submit" name="page" value="@(Model.Page + 1)" disabled="@(Model.Page == totalPages)">Next <i class="bi bi-arrow-right"></i></button>
+                    </nav>
+                }
+            </main>
         </div>
-    }
-</div>
+    </form>
+</section>
 
 @section Scripts {
     <script src="~/js/bookCart.js"></script>
+    <script src="~/js/catalog.js" asp-append-version="true"></script>
 }

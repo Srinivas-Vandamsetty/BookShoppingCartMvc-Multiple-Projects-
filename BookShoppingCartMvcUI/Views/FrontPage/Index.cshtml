@@ -1,51 +1,45 @@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<!-- Hero Section with Background Image -->
-<div class="hero-section position-relative text-center text-white"
-     style="background: url('@Url.Content("~/images/FrontPage.jpg")') no-repeat center center/cover; height: 600px;">
 
-    <div class="overlay position-absolute w-100 h-100" style="background: rgba(0, 0, 0, 0.5);"></div>
-
-    <div class="position-absolute top-50 start-50 translate-middle">
-        <p class="text-uppercase fw-bold" style="color: orange; letter-spacing: 2px;">Bookverse</p>
-        <h1 class="fw-bold">Explore a World of Books</h1>
-        <div class="mt-3">
-            <a asp-action="Index" asp-controller="Home" class="btn btn-warning btn-lg me-2 px-4">Browse Books</a>
-            <a href="@Url.Action("Contact", "FrontPage")" class="btn btn-outline-light btn-lg px-4">Contact Us</a>
-        </div>
-    </div>
-</div>
-
-<!-- Service Block Section -->
-<div class="container my-5">
-    <div class="row text-center">
-        <div class="col-md-4">
-            <div class="service-item">
-                <div class="icon d-inline-block border border-warning rounded-circle p-3">
-                    <i class="fas fa-shipping-fast text-warning fa-2x"></i>
+<main class="bookverse-home">
+    <section class="bookverse-hero">
+        <div class="container position-relative h-100">
+            <div class="bookverse-hero__content">
+                <p class="bookverse-eyebrow"><i class="bi bi-stars"></i> Your next favourite story awaits</p>
+                <h1>Discover books that stay with you.</h1>
+                <p class="bookverse-hero__description">Explore a carefully selected collection of fiction, learning, and unforgettable reads for every kind of reader.</p>
+                <div class="bookverse-hero__actions">
+                    <a asp-action="Index" asp-controller="Home" class="btn bookverse-button bookverse-button--primary">Browse collection <i class="bi bi-arrow-right"></i></a>
+                    <a asp-action="Shop" asp-controller="FrontPage" class="btn bookverse-button bookverse-button--outline">Explore categories</a>
                 </div>
-                <h5 class="fw-bold mt-3">Free Shipping</h5>
-                <p>When order is ₹999 or more after discounts</p>
+                <div class="bookverse-hero__proof">
+                    <span><i class="bi bi-patch-check-fill"></i> Curated selections</span>
+                    <span><i class="bi bi-truck"></i> Free delivery over ₹999</span>
+                </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="service-item">
-                <div class="icon d-inline-block border border-warning rounded-circle p-3">
-                    <i class="fas fa-phone-volume text-warning fa-2x"></i>
-                </div>
-                <h5 class="fw-bold mt-3">24/7 Support</h5>
-                <p>Get support all day</p>
+    </section>
+
+    <section class="bookverse-benefits" aria-label="BookVerse benefits">
+        <div class="container"><div class="row g-0">
+            <div class="col-md-4"><div class="bookverse-benefit"><span class="bookverse-benefit__icon"><i class="bi bi-truck"></i></span><div><strong>Free delivery</strong><span>On orders over ₹999</span></div></div></div>
+            <div class="col-md-4"><div class="bookverse-benefit"><span class="bookverse-benefit__icon"><i class="bi bi-shield-check"></i></span><div><strong>Secure checkout</strong><span>Safe payments every time</span></div></div></div>
+            <div class="col-md-4"><div class="bookverse-benefit"><span class="bookverse-benefit__icon"><i class="bi bi-arrow-repeat"></i></span><div><strong>Easy returns</strong><span>Simple 3-day refund process</span></div></div></div>
+        </div></div>
+    </section>
+
+    <section class="bookverse-discover">
+        <div class="container">
+            <div class="bookverse-section-heading">
+                <div><p class="bookverse-eyebrow bookverse-eyebrow--dark">Find your next read</p><h2>Choose a reading mood</h2></div>
+                <a asp-action="Index" asp-controller="Home" class="bookverse-text-link">View all books <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4"><a asp-action="Index" asp-controller="Home" class="bookverse-category-card bookverse-category-card--fiction"><span>01</span><h3>Escape into fiction</h3><p>Stories to transport you.</p><i class="bi bi-arrow-up-right"></i></a></div>
+                <div class="col-md-4"><a asp-action="Index" asp-controller="Home" class="bookverse-category-card bookverse-category-card--learning"><span>02</span><h3>Keep learning</h3><p>Ideas that move you forward.</p><i class="bi bi-arrow-up-right"></i></a></div>
+                <div class="col-md-4"><a asp-action="Index" asp-controller="Home" class="bookverse-category-card bookverse-category-card--children"><span>03</span><h3>Share the joy</h3><p>Stories for young readers.</p><i class="bi bi-arrow-up-right"></i></a></div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="service-item">
-                <div class="icon d-inline-block border border-warning rounded-circle p-3">
-                    <i class="fas fa-sync text-warning fa-2x"></i>
-                </div>
-                <h5 class="fw-bold mt-3">Refund</h5>
-                <p>Get refund within 3 days!</p>
-            </div>
-        </div>
-    </div>
-</div>
+    </section>
+</main>

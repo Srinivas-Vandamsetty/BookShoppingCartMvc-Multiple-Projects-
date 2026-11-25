@@ -7,21 +7,20 @@ using BookShoppingCart.Models.Models.DTOs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookShoppingCartMvcUI.Services;
 
-// Browsers hold an encrypted Identity cookie with a session reference, never API tokens.
+// Browsers hold an encrypted BookVerse session cookie with a session reference, never API tokens.
 public sealed class BrowserAuthenticationService(ApplicationDbContext db, AuthenticationApiClient api,
-    IDataProtectionProvider protection, SignInManager<IdentityUser> signIn, ILogger<BrowserAuthenticationService> logger)
+    IDataProtectionProvider protection, ILogger<BrowserAuthenticationService> logger)
 {
     public const string SessionKey = "bookverse:api-session";
     public const string TokensKey = "bookverse:api-tokens";
     private readonly IDataProtector _protector = protection.CreateProtector("BookVerse.BrowserTokens.v1");
 
-    public async Task SignInAsync(string email, string password, bool remember, HttpContext context, CancellationToken ct)
+    public async Task<ClaimsPrincipal> SignInAsync(string email, string password, bool remember, HttpContext context, CancellationToken ct)
     {
         var tokens = await api.LoginAsync(email, password, ct);
         // The payload comes exclusively from the configured HTTPS API, never browser input.
@@ -35,10 +34,10 @@ public sealed class BrowserAuthenticationService(ApplicationDbContext db, Authen
         }
         catch (Exception ex) when (ex is JsonException or FormatException or IndexOutOfRangeException or KeyNotFoundException)
         { throw new HttpRequestException("Invalid authentication response.", ex); }
-        var session = await db.ApiSessions.Include(s => s.User).SingleOrDefaultAsync(s => s.Id == id, ct);
+        var session = await db.ApiSessions.SingleOrDefaultAsync(s => s.Id == id, ct);
         if (session is null || session.UserId != userId || session.RevokedAtUtc is not null)
             throw new HttpRequestException("Invalid authentication session.");
-        var previous = await context.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+        var previous = await context.AuthenticateAsync(BookVerseAuthenticationDefaults.Scheme);
         if (previous.Properties?.Items.TryGetValue(SessionKey, out var old) == true && Guid.TryParse(old, out var oldId) && oldId != id)
             await RevokeAsync(oldId, ct);
         session.ProtectedBrowserTokens = _protector.Protect(JsonSerializer.Serialize(tokens));
@@ -49,7 +48,9 @@ public sealed class BrowserAuthenticationService(ApplicationDbContext db, Authen
             ExpiresUtc = new DateTimeOffset(DateTime.SpecifyKind(session.ExpiresAtUtc, DateTimeKind.Utc))
         };
         properties.Items[SessionKey] = id.ToString("N");
-        await signIn.SignInAsync(session.User, properties);
+        var principal = CreatePrincipal(tokens);
+        await context.SignInAsync(BookVerseAuthenticationDefaults.Scheme, principal, properties);
+        return principal;
     }
 
     private async Task LockAsync(Guid id, CancellationToken ct)
@@ -91,7 +92,10 @@ IF @result < 0 THROW 51011, 'Browser session is busy.', 1;", ct);
                     ? roles.EnumerateArray().Select(r => r.GetString()!).ToArray()
                     : new[] { roles.GetString()! }
                 : [];
-            var currentRoles = await signIn.UserManager.GetRolesAsync(session.User);
+            var currentRoles = await (from userRole in db.UserRoles
+                                      join role in db.Roles on userRole.RoleId equals role.Id
+                                      where userRole.UserId == session.UserId
+                                      select role.Name!).ToArrayAsync(ct);
             rolesChanged = !currentRoles.OrderBy(r => r, StringComparer.Ordinal)
                 .SequenceEqual(tokenRoles.OrderBy(r => r, StringComparer.Ordinal));
         }
@@ -150,9 +154,7 @@ IF @result < 0 THROW 51011, 'Browser session is busy.', 1;", ct);
             var tokens = await GetTokensAsync(id, userId, context.HttpContext.RequestAborted);
             if (tokens is null)
             { await RejectAsync(context); return; }
-            var user = await signIn.UserManager.FindByIdAsync(userId!);
-            if (user is null) { await RejectAsync(context); return; }
-            context.ReplacePrincipal(await signIn.CreateUserPrincipalAsync(user));
+            context.ReplacePrincipal(CreatePrincipal(tokens));
             context.HttpContext.Items[SessionKey] = id;
             context.HttpContext.Items[TokensKey] = tokens;
             context.HttpContext.Response.Headers.CacheControl = "no-store";
@@ -167,6 +169,36 @@ IF @result < 0 THROW 51011, 'Browser session is busy.', 1;", ct);
     {
         context.HttpContext.Items["bookverse:session-expired"] = true;
         context.RejectPrincipal();
-        await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+        await context.HttpContext.SignOutAsync(BookVerseAuthenticationDefaults.Scheme);
+    }
+
+    private static ClaimsPrincipal CreatePrincipal(AuthTokens tokens)
+    {
+        try
+        {
+            using var payload = JsonDocument.Parse(WebEncoders.Base64UrlDecode(tokens.AccessToken.Split('.')[1]));
+            var userId = payload.RootElement.GetProperty("sub").GetString();
+            var name = payload.RootElement.GetProperty("name").GetString();
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(name))
+                throw new JsonException("JWT claims are missing.");
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, userId),
+                new(ClaimTypes.Name, name)
+            };
+            if (payload.RootElement.TryGetProperty("role", out var roles))
+            {
+                if (roles.ValueKind == JsonValueKind.Array)
+                    claims.AddRange(roles.EnumerateArray().Select(role => new Claim(ClaimTypes.Role, role.GetString()!)));
+                else if (roles.ValueKind == JsonValueKind.String)
+                    claims.Add(new Claim(ClaimTypes.Role, roles.GetString()!));
+            }
+            return new ClaimsPrincipal(new ClaimsIdentity(claims, BookVerseAuthenticationDefaults.Scheme,
+                ClaimTypes.Name, ClaimTypes.Role));
+        }
+        catch (Exception ex) when (ex is JsonException or FormatException or IndexOutOfRangeException or KeyNotFoundException)
+        {
+            throw new HttpRequestException("Invalid authentication response.", ex);
+        }
     }
 }

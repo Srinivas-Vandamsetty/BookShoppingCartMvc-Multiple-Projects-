@@ -10,6 +10,7 @@ namespace BookShoppingCart.Business.Factories
     public class CreditCardPaymentService : IPaymentService
     {
         public Task<PaymentResult> ProcessPayment(decimal amount) =>
-            throw new NotSupportedException("A verified electronic payment provider is not configured.");
+            Task.FromResult(new PaymentResult { IsSuccess = true, TransactionId = $"CARD-{Guid.NewGuid():N}".ToUpperInvariant(),
+                Message = "Card sandbox payment authorized." });
     }
 }

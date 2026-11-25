@@ -13,7 +13,7 @@
     bool isValidCoupon = discountRate > 0;
 }
 
-<div class="container my-5">
+<main class="bv-cart container my-5">
     @if (Model != null && Model.CartDetails != null && Model.CartDetails.Count > 0)
     {
         <div class="row">
@@ -87,7 +87,7 @@
 
             <!-- Order Summary Right Section -->
             <div class="col-lg-4">
-                <div class="card p-4 shadow-sm">
+                <div class="card bv-cart__summary p-4 shadow-sm">
                     <h5 class="mb-3">Order Summary</h5>
 
                     <div class="d-flex justify-content-between">
@@ -154,4 +154,4 @@
             <a href="/" class="btn btn-primary mt-3">Start Shopping</a>
         </div>
     }
-</div>
+</main>

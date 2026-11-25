@@ -88,7 +88,7 @@ public sealed class CommerceApiTests
         var page = (await admin.GetFromJsonAsync<CommercePage<BookResponse>>("/api/admin/books"))!;
         Assert.Single(page.Items); Assert.False(page.HasNext);
         var methods = (await anonymous.GetFromJsonAsync<List<PaymentMethodResponse>>("/api/payment-methods"))!;
-        Assert.Equal("cash", Assert.Single(methods).Code);
+        Assert.Equal(["cash", "creditcard", "upi"], methods.Select(method => method.Code).ToArray());
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public sealed class CommerceApiTests
         Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
         Assert.Equal(2, await Read<int>(await buyer.PostAsJsonAsync("/api/cart/items", new CartItemRequest { BookId = book, Quantity = 2 })));
         var quote = await Read<CheckoutQuoteResponse>(await buyer.PostAsJsonAsync("/api/cart/quote", new QuoteRequest { CouponCode = "SAVE10" }));
-        Assert.Equal(230m, quote.Total);
+        Assert.Equal(220m, quote.Total);
         Assert.InRange(quote.ExpiresAtUtc, DateTime.UtcNow.AddMinutes(14), DateTime.UtcNow.AddMinutes(16));
         using var stolen = await other.PostAsJsonAsync("/api/cart/checkout", Checkout(quote, "SAVE10"));
         Assert.Equal(HttpStatusCode.BadRequest, stolen.StatusCode);
@@ -117,13 +117,38 @@ public sealed class CommerceApiTests
         quote = await Read<CheckoutQuoteResponse>(await buyer.PostAsJsonAsync("/api/cart/quote", new QuoteRequest { CouponCode = "SAVE10" }));
         var first = await Read<CheckoutResponse>(await buyer.PostAsJsonAsync("/api/cart/checkout", Checkout(quote, "SAVE10")));
         var replay = await Read<CheckoutResponse>(await buyer.PostAsJsonAsync("/api/cart/checkout", Checkout(quote, "SAVE10")));
-        Assert.Equal(first, replay); Assert.Equal(230m, first.Total);
+        Assert.Equal(first, replay); Assert.Equal(220m, first.Total);
         var orders = (await buyer.GetFromJsonAsync<CommercePage<OrderResponse>>("/api/orders"))!;
         Assert.Equal(first.OrderId, Assert.Single(orders.Items).Id);
         Assert.Equal(2, Assert.Single((await buyer.GetFromJsonAsync<OrderResponse>($"/api/orders/{first.OrderId}"))!.Items).Quantity);
         using var denied = await other.GetAsync($"/api/orders/{first.OrderId}");
         Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
         Assert.Equal(8, (await buyer.GetFromJsonAsync<AvailabilityResponse>($"/api/books/{book}/availability"))!.AvailableQuantity);
+    }
+
+    [Theory]
+    [InlineData("creditcard")]
+    [InlineData("upi")]
+    public async Task ElectronicCheckout_CreatesPaidOrderThroughApi(string paymentMethod)
+    {
+        await using var app = new AuthApiFactory();
+        await app.SeedUser();
+        var (_, book) = await SeedBook(app.Services);
+        using var buyer = app.Client();
+        await Authorize(buyer);
+        await Read<int>(await buyer.PostAsJsonAsync("/api/cart/items", new CartItemRequest { BookId = book, Quantity = 1 }));
+        var quote = await Read<CheckoutQuoteResponse>(await buyer.PostAsJsonAsync("/api/cart/quote", new QuoteRequest()));
+        var request = Checkout(quote);
+        request.PaymentMethod = paymentMethod;
+        if (paymentMethod == "creditcard") { request.CardholderName = "Test Reader"; request.CardNumber = "4111111111111111"; request.CardExpiry = "11/29"; request.CardCvv = "123"; }
+        else request.UpiId = "success@upi";
+
+        var placed = await Read<CheckoutResponse>(await buyer.PostAsJsonAsync("/api/cart/checkout", request));
+        var order = await buyer.GetFromJsonAsync<OrderResponse>($"/api/orders/{placed.OrderId}");
+
+        Assert.NotNull(order);
+        Assert.Equal(paymentMethod, order!.PaymentMethod);
+        Assert.True(order.IsPaid);
     }
 
     [Fact]

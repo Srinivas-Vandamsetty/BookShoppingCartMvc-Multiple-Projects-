@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.WebUtilities;
 
 namespace BookShoppingCartMvcUI.Controllers;
 
-[Authorize(Roles = nameof(Roles.Admin))]
+[Authorize(Roles = "Admin,Employee")]
 public class AdminOperationsController(IUserOrderService orders, CommerceApiClient api) : Controller
 {
     public async Task<IActionResult> AllOrders(int page = 1, string? status = null, string? search = null)
@@ -86,5 +86,18 @@ public class AdminOperationsController(IUserOrderService orders, CommerceApiClie
         return View(data);
     }
 
-    public IActionResult Dashboard() => View();
+    [Authorize(Roles = nameof(Roles.Admin))]
+    public async Task<IActionResult> Dashboard()
+    {
+        try
+        {
+            return View(await api.Get<AdminDashboardResponse>("admin/dashboard"));
+        }
+        catch (CommerceApiException ex)
+        {
+            TempData["errorMessage"] = ex.Message;
+            return View(new AdminDashboardResponse(0, 0m, 0, 0, 0m, 0m, 0,
+                [], [], []));
+        }
+    }
 }

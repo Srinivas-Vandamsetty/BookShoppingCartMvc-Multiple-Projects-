@@ -17,16 +17,16 @@ public sealed class OrdersController(CommerceOperations operations, IUserOrderSe
     [HttpGet("{orderId:int}")]
     public async Task<OrderResponse> Get(int orderId, CancellationToken ct) =>
         (await operations.FindOrder(orderId, ct) ?? throw new KeyNotFoundException("Order not found.")).ToResponse();
-    [HttpGet("/api/admin/orders"), Authorize(Roles = "Admin")]
+    [HttpGet("/api/admin/orders"), Authorize(Roles = "Admin,Employee")]
     public async Task<CommercePage<OrderResponse>> AdminList([FromQuery, Range(1,100000)] int page = 1,
         [FromQuery, StringLength(30)] string? status = null, [FromQuery, StringLength(80)] string? search = null, CancellationToken ct = default) =>
         CommercePage<OrderResponse>.From((await operations.SearchOrders(page, true, status, search, ct)).Select(o => o.ToResponse()), page);
-    [HttpGet("/api/admin/order-statuses"), Authorize(Roles = "Admin")]
+    [HttpGet("/api/admin/order-statuses"), Authorize(Roles = "Admin,Employee")]
     public Task<IEnumerable<OrderStatus>> Statuses() => orders.GetOrderStatuses();
-    [HttpPatch("/api/admin/orders/{orderId:int}/status"), Authorize(Roles = "Admin")]
+    [HttpPatch("/api/admin/orders/{orderId:int}/status"), Authorize(Roles = "Admin,Employee")]
     public async Task<IActionResult> UpdateStatus(int orderId, OrderStatusRequest request, CancellationToken ct)
     { await operations.UpdateStatus(orderId, request, ct); return NoContent(); }
-    [HttpPut("/api/admin/orders/{orderId:int}/cash-collection"), Authorize(Roles = "Admin")]
+    [HttpPut("/api/admin/orders/{orderId:int}/cash-collection"), Authorize(Roles = "Admin,Employee")]
     public async Task<IActionResult> RecordCash(int orderId, CashCollectionRequest request, CancellationToken ct)
     { await operations.RecordCash(orderId, request, ct); return NoContent(); }
 }

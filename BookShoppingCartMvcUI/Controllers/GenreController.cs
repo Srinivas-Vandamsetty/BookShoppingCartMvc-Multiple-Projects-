@@ -6,7 +6,7 @@ namespace BookShoppingCartMvcUI.Controllers;
 [Authorize(Roles = "Admin")]
 public class GenreController(IGenreService genres) : Controller
 {
-    public async Task<IActionResult> Index() => View(await genres.GetGenres());
+    public async Task<IActionResult> Index() => View(await genres.GetGenresWithBookCounts());
     public IActionResult AddGenre() => View(new GenreDTO());
     [HttpPost]
     public async Task<IActionResult> AddGenre(GenreDTO dto)

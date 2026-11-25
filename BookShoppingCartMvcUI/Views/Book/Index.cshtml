@@ -4,9 +4,9 @@
     Layout = "_AdminLayout";
 }
 
-<div class="container my-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="fw-bold text--bs-gray-dark">📚 Books</h2>
+<section class="admin-page">
+    <div class="admin-page__header">
+        <div><h1><i class="bi bi-bookshelf"></i>Books</h1><p>Manage your catalogue, pricing, genres, and book covers.</p></div>
         <a asp-action="AddBook" asp-controller="Book" class="btn btn-warning">
             <i class="bi bi-plus-circle me-1"></i> Add New Book
         </a>
@@ -17,7 +17,7 @@
     @if (Model?.Any() == true)
     {
         <div class="table-responsive">
-            <table class="table align-middle table-bordered table-hover shadow-sm rounded-3 bg-white">
+            <table class="table admin-books-table align-middle table-bordered table-hover">
                 <thead class="table-light">
                     <tr>
                         <th>Image</th>
@@ -34,17 +34,16 @@
                         <tr>
                             <td>
                                 <img src="/images/@(string.IsNullOrWhiteSpace(book.Image) ? "NoImage.png" : book.Image)"
-                                     class="img-thumbnail rounded shadow-sm"
-                                     style="width: 70px; height: 100px;" alt="Book Cover" />
+                                     class="img-thumbnail rounded shadow-sm" alt="Book Cover" />
                             </td>
-                            <td class="fw-semibold">@book.BookName</td>
-                            <td>@book.AuthorName</td>
+                            <td class="fw-semibold"><span class="admin-book-title">@book.BookName</span></td>
+                            <td><span class="admin-book-author">@book.AuthorName</span></td>
                             <td>
                                 <span class="badge bg-info text-dark">@book.Genre.GenreName</span>
                             </td>
                             <td class="fw-bold text-success">₹@book.Price.ToString("N2")</td>
                             <td>
-                                <div class="btn-group" role="group">
+                                <div class="admin-table-actions" role="group">
                                     <a asp-action="UpdateBook" asp-controller="Book" asp-route-id="@book.Id"
                                        class="btn btn-success btn-sm">
                                         <i class="bi bi-pencil-square"></i> Edit
@@ -73,6 +72,6 @@
             No records found. Click <strong>Add New Book</strong> to get started.
         </div>
     }
-</div>
+</section>
 
 <partial name="_OrderPaging" />
