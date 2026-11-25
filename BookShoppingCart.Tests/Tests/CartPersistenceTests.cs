@@ -13,10 +13,12 @@ using BookStoreCore.Shared;
 
 namespace BookShoppingCart.Tests.Tests;
 
-public sealed class TestUser(string id, bool admin = false) : ICurrentUser
+public sealed class TestUser(string id, bool admin = false, bool employee = false) : ICurrentUser
 {
     public string UserId => id;
     public bool IsAdmin => admin;
+    public bool IsEmployee => employee;
+    public bool CanManageOrders => IsAdmin || IsEmployee;
 }
 
 public sealed class CartPersistenceTests : IAsyncLifetime

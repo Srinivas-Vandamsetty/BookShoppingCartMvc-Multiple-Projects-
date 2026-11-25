@@ -184,7 +184,7 @@ public class FrontendAuthenticationTests
             Assert.True((await users.UpdateSecurityStampAsync((await users.FindByEmailAsync(FrontendAuthHarness.Email))!)).Succeeded);
         }
         using var denied = await client.GetAsync("/AdminOperations/Dashboard");
-        Assert.Contains("/Identity/Account/Login", denied.Headers.Location!.ToString());
+        Assert.Contains("/Auth/Login", denied.Headers.Location!.ToString());
     }
 
     [SqlServerFact]
@@ -194,8 +194,8 @@ public class FrontendAuthenticationTests
         using var client = app.Client();
         using var login = await FrontendAuthHarness.Login(client, remember: true);
         Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
-        Assert.Equal("/Home/Index", login.Headers.Location!.ToString());
-        var cookie = login.Headers.GetValues("Set-Cookie").Single(c => c.Contains(".AspNetCore.Identity.Application="));
+        Assert.Equal("/FrontPage/Index", login.Headers.Location!.ToString());
+        var cookie = login.Headers.GetValues("Set-Cookie").Single(c => c.Contains("BookVerse.Session="));
         Assert.Contains("secure", cookie); Assert.Contains("httponly", cookie); Assert.Contains("samesite=lax", cookie);
         Assert.Contains("expires=", cookie);
         var tokens = await app.StoredTokens();
@@ -231,7 +231,7 @@ public class FrontendAuthenticationTests
         Assert.Contains(app.Calls, call => call == ("/api/auth/logout", "Bearer"));
         await app.AssertRevoked();
         using var denied = await client.GetAsync("/Identity/Account/Manage");
-        Assert.Contains("/Identity/Account/Login", denied.Headers.Location!.ToString());
+        Assert.Contains("/Auth/Login", denied.Headers.Location!.ToString());
     }
 
     [SqlServerFact]
@@ -250,7 +250,7 @@ public class FrontendAuthenticationTests
         Assert.Contains("temporarily unavailable", await offline.Content.ReadAsStringAsync());
         app.Offline = false;
         using var login = await FrontendAuthHarness.Login(client, returnUrl: "https://evil.example/");
-        Assert.Equal("/AdminOperations/Dashboard", login.Headers.Location!.ToString());
+        Assert.Equal("/FrontPage/Index", login.Headers.Location!.ToString());
     }
 
     [SqlServerFact]
@@ -261,7 +261,7 @@ public class FrontendAuthenticationTests
         Assert.Equal("/Identity/Account/Manage", login.Headers.Location!.ToString());
         await app.StoredTokens(expiredRefresh: true);
         using var denied = await client.GetAsync("/Identity/Account/Manage");
-        Assert.Contains("/Identity/Account/Login", denied.Headers.Location!.ToString());
+        Assert.Contains("/Auth/Login", denied.Headers.Location!.ToString());
         await app.AssertRevoked();
     }
 
